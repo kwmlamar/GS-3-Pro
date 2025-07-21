@@ -25,6 +25,8 @@ import {
   searchEmployees, 
   getEmployeeStats, 
   initializeEmployeeData,
+  getBackgroundCheckStats,
+  getOnboardingStats,
   EMPLOYEE_TYPES 
 } from '@/lib/employeeService';
 import { testDatabaseConnection } from '@/lib/testConnection';
@@ -35,6 +37,8 @@ const Employees = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState(null);
+  const [backgroundStats, setBackgroundStats] = useState(null);
+  const [onboardingStats, setOnboardingStats] = useState(null);
   const [showAddForm, setShowAddForm] = useState(false);
   const [selectedEmployee, setSelectedEmployee] = useState(null);
   const { toast } = useToast();
@@ -42,6 +46,8 @@ const Employees = () => {
   // Load employees on component mount
   useEffect(() => {
     loadEmployees();
+    loadBackgroundStats();
+    loadOnboardingStats();
   }, []);
 
   // Filter employees when search term changes
@@ -95,6 +101,26 @@ const Employees = () => {
     }
   };
 
+  const loadBackgroundStats = async () => {
+    try {
+      const { data, error } = await getBackgroundCheckStats();
+      if (error) throw error;
+      setBackgroundStats(data);
+    } catch (error) {
+      console.error('Error loading background stats:', error);
+    }
+  };
+
+  const loadOnboardingStats = async () => {
+    try {
+      const { data, error } = await getOnboardingStats();
+      if (error) throw error;
+      setOnboardingStats(data);
+    } catch (error) {
+      console.error('Error loading onboarding stats:', error);
+    }
+  };
+
   const handleAddEmployee = () => {
     setShowAddForm(true);
   };
@@ -108,11 +134,17 @@ const Employees = () => {
       prev.map(emp => emp.id === updatedEmployee.id ? updatedEmployee : emp)
     );
     setSelectedEmployee(null);
+    // Refresh stats when employee is updated
+    loadBackgroundStats();
+    loadOnboardingStats();
   };
 
   const handleEmployeeCreated = (newEmployee) => {
     setEmployees(prev => [newEmployee, ...prev]);
     setShowAddForm(false);
+    // Refresh stats when new employee is added
+    loadBackgroundStats();
+    loadOnboardingStats();
   };
 
   const handleTestConnection = async () => {
@@ -158,15 +190,10 @@ const Employees = () => {
           </h1>
           <p className="text-gray-400 mt-1">Manage personnel, credentials, and compliance efficiently.</p>
         </div>
-        <div className="flex space-x-2 mt-4 sm:mt-0">
-          <Button onClick={handleTestConnection} variant="outline" className="ios-button border-slate-600 hover:bg-slate-700">
-            Test DB
-          </Button>
-          <Button onClick={handleAddEmployee} className="ios-button bg-blue-600 hover:bg-blue-700">
-            <Plus className="w-4 h-4 mr-2" />
-            Add Employee
-          </Button>
-        </div>
+        <Button onClick={handleAddEmployee} className="ios-button bg-blue-600 hover:bg-blue-700 mt-4 sm:mt-0">
+          <Plus className="w-4 h-4 mr-2" />
+          Add Employee
+        </Button>
       </motion.div>
 
       <Tabs defaultValue="employees" className="space-y-6">
@@ -351,16 +378,25 @@ const Employees = () => {
                   <div className="space-y-3">
                     <div className="flex items-center justify-between p-3 rounded-md bg-green-500/10">
                       <span className="text-white">Completed Checks</span>
-                      <span className="text-green-400 font-semibold">234</span>
+                      <span className="text-green-400 font-semibold">
+                        {backgroundStats ? backgroundStats.completedChecks : '...'}
+                      </span>
                     </div>
                     <div className="flex items-center justify-between p-3 rounded-md bg-yellow-500/10">
                       <span className="text-white">In Progress</span>
-                      <span className="text-yellow-400 font-semibold">12</span>
+                      <span className="text-yellow-400 font-semibold">
+                        {backgroundStats ? backgroundStats.inProgress : '...'}
+                      </span>
                     </div>
                     <div className="flex items-center justify-between p-3 rounded-md bg-red-500/10">
                       <span className="text-white">Pending Review</span>
-                      <span className="text-red-400 font-semibold">3</span>
+                      <span className="text-red-400 font-semibold">
+                        {backgroundStats ? backgroundStats.pendingReview : '...'}
+                      </span>
                     </div>
+                  </div>
+                  <div className="text-xs text-gray-400 mt-2">
+                    Total Employees: {backgroundStats ? backgroundStats.totalEmployees : '...'}
                   </div>
                    <Button variant="outline" className="w-full mt-4 glass-button" onClick={() => toast({title: "🚧 Feature Not Implemented"})}>Manage Credentials</Button>
                 </div>
@@ -384,19 +420,25 @@ const Employees = () => {
                   <div className="text-center p-4 rounded-lg bg-blue-500/10">
                     <Star className="w-8 h-8 text-blue-400 mx-auto mb-2" />
                     <h3 className="text-white font-semibold">New Hires</h3>
-                    <p className="text-2xl font-bold text-blue-400">15</p>
+                    <p className="text-2xl font-bold text-blue-400">
+                      {onboardingStats ? onboardingStats.newHires : '...'}
+                    </p>
                     <p className="text-gray-400 text-sm">This Month</p>
                   </div>
                   <div className="text-center p-4 rounded-lg bg-yellow-500/10">
                     <AlertTriangle className="w-8 h-8 text-yellow-400 mx-auto mb-2" />
                     <h3 className="text-white font-semibold">In Training</h3>
-                    <p className="text-2xl font-bold text-yellow-400">8</p>
+                    <p className="text-2xl font-bold text-yellow-400">
+                      {onboardingStats ? onboardingStats.inTraining : '...'}
+                    </p>
                     <p className="text-gray-400 text-sm">Active</p>
                   </div>
                   <div className="text-center p-4 rounded-lg bg-green-500/10">
                     <UserCheck className="w-8 h-8 text-green-400 mx-auto mb-2" />
                     <h3 className="text-white font-semibold">Qualified</h3>
-                    <p className="text-2xl font-bold text-green-400">247</p>
+                    <p className="text-2xl font-bold text-green-400">
+                      {onboardingStats ? onboardingStats.qualified : '...'}
+                    </p>
                     <p className="text-gray-400 text-sm">Ready for Duty</p>
                   </div>
                 </div>

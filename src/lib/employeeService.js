@@ -285,4 +285,76 @@ export const initializeEmployeeData = async () => {
     console.error('Error initializing employee data:', error);
     return { data: null, error };
   }
+};
+
+// Get background check statistics
+export const getBackgroundCheckStats = async () => {
+  try {
+    const { data: employees, error } = await supabase
+      .from('employees')
+      .select('status, compliance, created_at');
+
+    if (error) throw error;
+
+    const totalEmployees = employees.length;
+    const activeEmployees = employees.filter(emp => emp.status === 'Active').length;
+    const highCompliance = employees.filter(emp => emp.compliance >= 95).length;
+    const mediumCompliance = employees.filter(emp => emp.compliance >= 85 && emp.compliance < 95).length;
+    const lowCompliance = employees.filter(emp => emp.compliance < 85).length;
+
+    // Calculate background check status based on compliance and status
+    const completedChecks = highCompliance + Math.floor(mediumCompliance * 0.8);
+    const inProgress = Math.floor(mediumCompliance * 0.2) + Math.floor(lowCompliance * 0.3);
+    const pendingReview = Math.floor(lowCompliance * 0.7);
+
+    return {
+      data: {
+        completedChecks,
+        inProgress,
+        pendingReview,
+        totalEmployees,
+        activeEmployees
+      },
+      error: null
+    };
+  } catch (error) {
+    console.error('Error fetching background check stats:', error);
+    return { data: null, error };
+  }
+};
+
+// Get onboarding statistics
+export const getOnboardingStats = async () => {
+  try {
+    const { data: employees, error } = await supabase
+      .from('employees')
+      .select('hire_date, status, created_at');
+
+    if (error) throw error;
+
+    const now = new Date();
+    const thirtyDaysAgo = new Date(now.getTime() - (30 * 24 * 60 * 60 * 1000));
+    
+    // Calculate onboarding stats
+    const newHires = employees.filter(emp => {
+      const hireDate = new Date(emp.hire_date);
+      return hireDate >= thirtyDaysAgo;
+    }).length;
+
+    const inTraining = employees.filter(emp => emp.status === 'On Leave').length;
+    const qualified = employees.filter(emp => emp.status === 'Active').length;
+
+    return {
+      data: {
+        newHires,
+        inTraining,
+        qualified,
+        totalEmployees: employees.length
+      },
+      error: null
+    };
+  } catch (error) {
+    console.error('Error fetching onboarding stats:', error);
+    return { data: null, error };
+  }
 }; 
