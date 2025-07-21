@@ -1,10 +1,12 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/components/ui/use-toast';
+import { assessmentService } from '@/lib/assessmentService';
+import AssessmentForm from '@/components/assessments/AssessmentForm';
 import { 
   ClipboardCheck, 
   Plus, 
@@ -16,42 +18,19 @@ import {
   AlertTriangle,
   ListChecks,
   ShoppingCart,
-  Home
+  Home,
+  Loader2
 } from 'lucide-react';
 
 const Assessments = () => {
   const [searchTerm, setSearchTerm] = useState('');
+  const [assessments, setAssessments] = useState([]);
+  const [templates, setTemplates] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [loadingTemplates, setLoadingTemplates] = useState(true);
+  const [showForm, setShowForm] = useState(false);
+  const [selectedAssessment, setSelectedAssessment] = useState(null);
   const { toast } = useToast();
-
-  const assessments = [
-    {
-      id: 1,
-      type: 'New Site',
-      client: 'TechCorp Industries',
-      location: 'Downtown Office Complex',
-      status: 'In Progress',
-      date: '2025-07-15',
-      priority: 'High'
-    },
-    {
-      id: 2,
-      type: 'Existing Site',
-      client: 'Metro Hospital',
-      location: 'Emergency Department',
-      status: 'Completed',
-      date: '2025-06-12',
-      priority: 'Medium'
-    },
-    {
-      id: 3,
-      type: 'New Site',
-      client: 'Retail Plaza LLC',
-      location: 'Shopping Center',
-      status: 'Scheduled',
-      date: '2025-08-01',
-      priority: 'Low'
-    }
-  ];
 
   const serviceOptions = [
     'Physical Security Guards', 'Access Control Systems', 'CCTV Surveillance',
@@ -69,10 +48,68 @@ const Assessments = () => {
 
 
   const handleCreateAssessment = () => {
-    toast({
-      title: "🚧 This feature isn't implemented yet—but don't worry! You can request it in your next prompt! 🚀"
-    });
+    setSelectedAssessment(null);
+    setShowForm(true);
   };
+
+  const handleEditAssessment = (assessment) => {
+    setSelectedAssessment(assessment);
+    setShowForm(true);
+  };
+
+  const handleSaveAssessment = (savedAssessment) => {
+    if (selectedAssessment) {
+      // Update existing assessment in the list
+      setAssessments(prev => prev.map(a => a.id === savedAssessment.id ? savedAssessment : a));
+    } else {
+      // Add new assessment to the list
+      setAssessments(prev => [savedAssessment, ...prev]);
+    }
+  };
+
+  // Load assessments from database
+  useEffect(() => {
+    const loadAssessments = async () => {
+      try {
+        setLoading(true);
+        const data = await assessmentService.getAssessments({ search: searchTerm });
+        setAssessments(data);
+      } catch (error) {
+        console.error('Error loading assessments:', error);
+        toast({
+          title: "Error loading assessments",
+          description: "Failed to load assessments from database",
+          variant: "destructive"
+        });
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadAssessments();
+  }, [searchTerm, toast]);
+
+  // Load templates from database
+  useEffect(() => {
+    const loadTemplates = async () => {
+      try {
+        setLoadingTemplates(true);
+        const data = await assessmentService.getAssessmentTemplates();
+        setTemplates(data);
+      } catch (error) {
+        console.error('Error loading templates:', error);
+        toast({
+          title: "Error loading templates",
+          description: "Failed to load assessment templates from database",
+          variant: "destructive"
+        });
+      } finally {
+        setLoadingTemplates(false);
+      }
+    };
+
+    loadTemplates();
+  }, [toast]);
 
   const handleViewAssessment = (id) => {
     toast({
@@ -132,66 +169,79 @@ const Assessments = () => {
               </div>
             </CardHeader>
             <CardContent>
-              <div className="space-y-4">
-                {assessments.filter(a => a.client.toLowerCase().includes(searchTerm.toLowerCase()) || a.location.toLowerCase().includes(searchTerm.toLowerCase())).map((assessment) => (
-                  <motion.div
-                    key={assessment.id}
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    className="p-4 rounded-lg bg-slate-800/40 border border-slate-700 hover:bg-slate-700/60 transition-colors"
-                  >
-                    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between">
-                      <div className="flex-1 mb-3 sm:mb-0">
-                        <div className="flex items-center space-x-3 mb-2">
-                          <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                            assessment.type === 'New Site' ? 'bg-blue-500/20 text-blue-400' : 'bg-green-500/20 text-green-400'
-                          }`}>
-                            {assessment.type}
-                          </span>
-                          <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                            assessment.priority === 'High' ? 'bg-red-500/20 text-red-400' :
-                            assessment.priority === 'Medium' ? 'bg-yellow-500/20 text-yellow-400' :
-                            'bg-gray-500/20 text-gray-400'
-                          }`}>
-                            {assessment.priority} Priority
-                          </span>
+              {loading ? (
+                <div className="flex items-center justify-center py-8">
+                  <Loader2 className="w-6 h-6 animate-spin text-blue-400" />
+                  <span className="ml-2 text-gray-400">Loading assessments...</span>
+                </div>
+              ) : assessments.length === 0 ? (
+                <div className="text-center py-8">
+                  <ClipboardCheck className="w-12 h-12 text-gray-500 mx-auto mb-4" />
+                  <p className="text-gray-400">No assessments found</p>
+                  <p className="text-gray-500 text-sm mt-1">Create your first assessment to get started</p>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {assessments.map((assessment) => (
+                    <motion.div
+                      key={assessment.id}
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className="p-4 rounded-lg bg-slate-800/40 border border-slate-700 hover:bg-slate-700/60 transition-colors"
+                    >
+                      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between">
+                        <div className="flex-1 mb-3 sm:mb-0">
+                          <div className="flex items-center space-x-3 mb-2">
+                            <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                              assessment.assessment_type === 'New Site' ? 'bg-blue-500/20 text-blue-400' : 'bg-green-500/20 text-green-400'
+                            }`}>
+                              {assessment.assessment_type}
+                            </span>
+                            <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                              assessment.priority === 'High' ? 'bg-red-500/20 text-red-400' :
+                              assessment.priority === 'Medium' ? 'bg-yellow-500/20 text-yellow-400' :
+                              'bg-gray-500/20 text-gray-400'
+                            }`}>
+                              {assessment.priority} Priority
+                            </span>
+                          </div>
+                          <h3 className="text-white font-semibold text-lg">{assessment.client_name}</h3>
+                          <div className="flex items-center space-x-3 mt-1 text-sm text-gray-400">
+                            <div className="flex items-center space-x-1">
+                              <MapPin className="w-3.5 h-3.5" />
+                              <span>{assessment.location}</span>
+                            </div>
+                            <div className="flex items-center space-x-1">
+                              <Calendar className="w-3.5 h-3.5" />
+                              <span>{assessment.scheduled_date}</span>
+                            </div>
+                          </div>
                         </div>
-                        <h3 className="text-white font-semibold text-lg">{assessment.client}</h3>
-                        <div className="flex items-center space-x-3 mt-1 text-sm text-gray-400">
-                          <div className="flex items-center space-x-1">
-                            <MapPin className="w-3.5 h-3.5" />
-                            <span>{assessment.location}</span>
+                        <div className="flex items-center space-x-3">
+                          <div className="flex items-center space-x-1.5">
+                            {assessment.status === 'Completed' ? (
+                              <CheckCircle className="w-4 h-4 text-green-400" />
+                            ) : assessment.status === 'In Progress' ? (
+                              <AlertTriangle className="w-4 h-4 text-yellow-400 animate-pulse" />
+                            ) : (
+                              <Calendar className="w-4 h-4 text-blue-400" />
+                            )}
+                            <span className="text-sm text-gray-300">{assessment.status}</span>
                           </div>
-                          <div className="flex items-center space-x-1">
-                            <Calendar className="w-3.5 h-3.5" />
-                            <span>{assessment.date}</span>
-                          </div>
+                          <Button 
+                            variant="outline" 
+                            size="sm"
+                            onClick={() => handleEditAssessment(assessment)}
+                            className="ios-button border-slate-600 hover:bg-slate-700"
+                          >
+                            Edit
+                          </Button>
                         </div>
                       </div>
-                      <div className="flex items-center space-x-3">
-                        <div className="flex items-center space-x-1.5">
-                          {assessment.status === 'Completed' ? (
-                            <CheckCircle className="w-4 h-4 text-green-400" />
-                          ) : assessment.status === 'In Progress' ? (
-                            <AlertTriangle className="w-4 h-4 text-yellow-400 animate-pulse" />
-                          ) : (
-                            <Calendar className="w-4 h-4 text-blue-400" />
-                          )}
-                          <span className="text-sm text-gray-300">{assessment.status}</span>
-                        </div>
-                        <Button 
-                          variant="outline" 
-                          size="sm"
-                          onClick={() => handleViewAssessment(assessment.id)}
-                          className="ios-button border-slate-600 hover:bg-slate-700"
-                        >
-                          View Details
-                        </Button>
-                      </div>
-                    </div>
-                  </motion.div>
-                ))}
-              </div>
+                    </motion.div>
+                  ))}
+                </div>
+              )}
             </CardContent>
           </Card>
         </TabsContent>
@@ -206,24 +256,38 @@ const Assessments = () => {
               <CardDescription className="text-gray-400">Standardized templates for various assessment types.</CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {assessmentTemplates.map((template, index) => (
-                  <motion.div
-                    key={template.title}
-                    initial={{ opacity: 0, scale: 0.9 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    transition={{ delay: index * 0.05 }}
-                    className="p-4 rounded-lg bg-slate-800/40 border border-slate-700 hover:bg-slate-700/60 transition-colors cursor-pointer flex items-start space-x-4"
-                    onClick={() => toast({ title: "🚧 This feature isn't implemented yet—but don't worry! You can request it in your next prompt! 🚀" })}
-                  >
-                    <template.icon className="w-8 h-8 text-purple-400 mt-1 flex-shrink-0" />
-                    <div>
-                      <h3 className="text-white font-medium mb-1">{template.title}</h3>
-                      <p className="text-gray-400 text-sm">{template.description}</p>
-                    </div>
-                  </motion.div>
-                ))}
-              </div>
+              {loadingTemplates ? (
+                <div className="flex items-center justify-center py-8">
+                  <Loader2 className="w-6 h-6 animate-spin text-purple-400" />
+                  <span className="ml-2 text-gray-400">Loading templates...</span>
+                </div>
+              ) : templates.length === 0 ? (
+                <div className="text-center py-8">
+                  <FileText className="w-12 h-12 text-gray-500 mx-auto mb-4" />
+                  <p className="text-gray-400">No templates found</p>
+                  <p className="text-gray-500 text-sm mt-1">Assessment templates will appear here</p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {templates.map((template, index) => (
+                    <motion.div
+                      key={template.id}
+                      initial={{ opacity: 0, scale: 0.9 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      transition={{ delay: index * 0.05 }}
+                      className="p-4 rounded-lg bg-slate-800/40 border border-slate-700 hover:bg-slate-700/60 transition-colors cursor-pointer flex items-start space-x-4"
+                      onClick={() => toast({ title: "🚧 This feature isn't implemented yet—but don't worry! You can request it in your next prompt! 🚀" })}
+                    >
+                      <FileText className="w-8 h-8 text-purple-400 mt-1 flex-shrink-0" />
+                      <div>
+                        <h3 className="text-white font-medium mb-1">{template.title}</h3>
+                        <p className="text-gray-400 text-sm">{template.description}</p>
+                        <span className="text-xs text-purple-400 mt-1">{template.template_type}</span>
+                      </div>
+                    </motion.div>
+                  ))}
+                </div>
+              )}
             </CardContent>
           </Card>
         </TabsContent>
@@ -256,6 +320,18 @@ const Assessments = () => {
           </Card>
         </TabsContent>
       </Tabs>
+      
+      {/* Assessment Form Modal */}
+      {showForm && (
+        <AssessmentForm
+          assessment={selectedAssessment}
+          onClose={() => {
+            setShowForm(false);
+            setSelectedAssessment(null);
+          }}
+          onSave={handleSaveAssessment}
+        />
+      )}
     </div>
   );
 };
