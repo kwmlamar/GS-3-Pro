@@ -49,26 +49,20 @@ const Sites = () => {
           client_id, 
           address, 
           gps_coordinates,
-          parent:sites!parent_id ( name ), 
-          client:users ( full_name )
+          parent:sites!parent_id ( name )
         `);
 
       if (sitesError) throw sitesError;
       const formattedSites = sitesData.map(s => ({
         ...s,
         parent_name: s.parent?.name,
-        client_name: s.client?.full_name
+        client_name: null // No client relationship for now
       }));
       setSites(formattedSites);
       setAllSitesForParentDropdown(sitesData.map(s => ({ id: s.id, name: s.name, type: s.type })));
 
-      const { data: clientsData, error: clientsError } = await supabase
-        .from('users')
-        .select('id, full_name')
-        .eq('role', 'client_poc');
-      
-      if (clientsError) throw clientsError;
-      setClients(clientsData);
+      // Clients functionality disabled until users table exists
+      setClients([]);
 
     } catch (error) {
       toast({ variant: 'destructive', title: 'Error fetching data', description: error.message });

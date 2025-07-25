@@ -146,13 +146,13 @@ const EntityForm = ({ isEditing, currentSite, clients, allSitesForParent, onSucc
               </div>
               <div>
                 <Label htmlFor="client_id" className="text-gray-300">Client (Optional)</Label>
-                <Select name="client_id" value={formData.client_id || 'none'} onValueChange={(value) => handleSelectChange('client_id', value)}>
-                  <SelectTrigger className={iosInputStyle}><SelectValue placeholder="Select client..." /></SelectTrigger>
+                <Select name="client_id" value="none" onValueChange={(value) => handleSelectChange('client_id', value)} disabled>
+                  <SelectTrigger className={iosInputStyle}><SelectValue placeholder="Client selection disabled" /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="none">None</SelectItem>
-                    {clients.map(client => <SelectItem key={client.id} value={client.id}>{client.full_name}</SelectItem>)}
                   </SelectContent>
                 </Select>
+                <p className="text-xs text-slate-400 mt-1">Client functionality disabled until users table is created.</p>
               </div>
             </div>
             <div>
