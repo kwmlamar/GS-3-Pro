@@ -186,9 +186,9 @@ const Employees = () => {
         <div>
           <h1 className="text-3xl font-bold text-white flex items-center">
             <Users className="w-8 h-8 mr-3 text-blue-400" />
-            Employee Management
+            Security Staff Management
           </h1>
-          <p className="text-gray-400 mt-1">Manage personnel, credentials, and compliance efficiently.</p>
+          <p className="text-gray-400 mt-1">Manage security personnel, credentials, and compliance efficiently.</p>
         </div>
         <Button onClick={handleAddEmployee} className="ios-button bg-blue-600 hover:bg-blue-700 mt-4 sm:mt-0">
           <Plus className="w-4 h-4 mr-2" />
@@ -198,7 +198,7 @@ const Employees = () => {
 
       <Tabs defaultValue="employees" className="space-y-6">
         <TabsList className={`${iosTabsListStyle} border-b border-slate-700`}>
-          <TabsTrigger value="employees" className={`${iosTabsTriggerStyle} ${iosTabsActiveTriggerStyle}`}>Employees</TabsTrigger>
+                      <TabsTrigger value="employees" className={`${iosTabsTriggerStyle} ${iosTabsActiveTriggerStyle}`}>Security Staff</TabsTrigger>
           <TabsTrigger value="types" className={`${iosTabsTriggerStyle} ${iosTabsActiveTriggerStyle}`}>Employee Types</TabsTrigger>
           <TabsTrigger value="background" className={`${iosTabsTriggerStyle} ${iosTabsActiveTriggerStyle}`}>Background Checks</TabsTrigger>
           <TabsTrigger value="onboarding" className={`${iosTabsTriggerStyle} ${iosTabsActiveTriggerStyle}`}>Onboarding</TabsTrigger>
@@ -210,12 +210,12 @@ const Employees = () => {
               <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between">
                 <CardTitle className="flex items-center space-x-2 text-white">
                   <Users className="w-5 h-5 text-blue-400" />
-                  <span>Active Personnel ({filteredEmployees.length})</span>
+                  <span>Active Security Staff ({filteredEmployees.length})</span>
                 </CardTitle>
                 <div className="relative mt-3 sm:mt-0">
                   <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
                   <Input
-                    placeholder="Search employees..."
+                    placeholder="Search security staff..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
                     className="pl-10 w-full sm:w-80 bg-slate-700/50 border-slate-600 text-gray-200 focus:ring-blue-500 focus:border-blue-500"
@@ -227,18 +227,18 @@ const Employees = () => {
               {loading ? (
                 <div className="flex items-center justify-center py-12">
                   <Loader2 className="w-8 h-8 animate-spin text-blue-400" />
-                  <span className="ml-3 text-gray-400">Loading employees...</span>
+                  <span className="ml-3 text-gray-400">Loading security staff...</span>
                 </div>
               ) : filteredEmployees.length === 0 ? (
                 <div className="text-center py-12">
                   <Users className="w-12 h-12 text-gray-500 mx-auto mb-4" />
                   <p className="text-gray-400 mb-2">
-                    {searchTerm ? 'No employees found matching your search.' : 'No employees found.'}
+                    {searchTerm ? 'No security staff found matching your search.' : 'No security staff found.'}
                   </p>
                   {!searchTerm && (
                     <Button onClick={handleAddEmployee} className="mt-4">
                       <Plus className="w-4 h-4 mr-2" />
-                      Add First Employee
+                      Add First Security Staff
                     </Button>
                   )}
                 </div>
@@ -307,8 +307,8 @@ const Employees = () => {
         <TabsContent value="types" className="space-y-6">
           <Card className="ios-card">
             <CardHeader>
-              <CardTitle className="text-white">Employee Role Definitions</CardTitle>
-              <CardDescription className="text-gray-400">Overview of different employee types and their requirements.</CardDescription>
+                          <CardTitle className="text-white">Security Staff Role Definitions</CardTitle>
+            <CardDescription className="text-gray-400">Overview of different security staff types and their requirements.</CardDescription>
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -396,7 +396,7 @@ const Employees = () => {
                     </div>
                   </div>
                   <div className="text-xs text-gray-400 mt-2">
-                    Total Employees: {backgroundStats ? backgroundStats.totalEmployees : '...'}
+                    Total Security Staff: {backgroundStats ? backgroundStats.totalEmployees : '...'}
                   </div>
                    <Button variant="outline" className="w-full mt-4 glass-button" onClick={() => toast({title: "🚧 Feature Not Implemented"})}>Manage Credentials</Button>
                 </div>

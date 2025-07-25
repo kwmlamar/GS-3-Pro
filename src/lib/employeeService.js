@@ -69,7 +69,7 @@ export const getEmployees = async () => {
     }
     return { data, error: null };
   } catch (error) {
-    console.error('Error fetching employees:', error);
+          console.error('Error fetching security staff:', error);
     return { data: null, error };
   }
 };
@@ -137,7 +137,7 @@ export const searchEmployees = async (searchTerm) => {
     if (error) throw error;
     return { data, error: null };
   } catch (error) {
-    console.error('Error searching employees:', error);
+          console.error('Error searching security staff:', error);
     return { data: null, error };
   }
 };
@@ -154,7 +154,7 @@ export const getEmployeesByType = async (type) => {
     if (error) throw error;
     return { data, error: null };
   } catch (error) {
-    console.error('Error fetching employees by type:', error);
+          console.error('Error fetching security staff by type:', error);
     return { data: null, error };
   }
 };
@@ -263,7 +263,7 @@ export const initializeEmployeeData = async () => {
 
     if (checkError && checkError.code === '42P01') {
       // Table doesn't exist, create it
-      console.log('Creating employees table...');
+      console.log('Creating security staff table...');
       // Note: In a real app, you'd use migrations to create tables
       // For now, we'll assume the table exists
     }

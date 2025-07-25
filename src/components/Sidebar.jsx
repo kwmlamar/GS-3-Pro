@@ -18,7 +18,7 @@ const navItems = [
   { icon: LayoutDashboard, label: 'Dashboard', path: '/', roles: allRoles },
   { icon: ShieldCheck, label: 'Assessments', path: '/assessments', roles: supervisorAndAbove },
   { icon: Network, label: 'Hierarchy Builder', path: '/sites', roles: [...commonRoles, ...executiveRoles] }, 
-  { icon: Users, label: 'Employees', path: '/employees', roles: supervisorAndAbove },
+  { icon: Users, label: 'Security Staff', path: '/employees', roles: supervisorAndAbove },
   { icon: UserCheck, label: 'Performance', path: '/performance', roles: supervisorAndAbove },
   { icon: Briefcase, label: 'Subcontractors', path: '/subcontractors', roles: operationsAndAdmin },
   { icon: ShieldAlert, label: 'Health & Safety', path: '/health-safety', roles: [...commonRoles, ...executiveRoles] },

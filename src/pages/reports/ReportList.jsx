@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -11,42 +11,30 @@ import {
   Share,
   Eye,
   Calendar,
-  Hash
+  Hash,
+  Loader2,
+  Edit
 } from 'lucide-react';
+import { reportsService } from '@/lib/reportsService';
+import ReportForm from '@/components/reports/ReportForm';
 
 const ReportList = () => {
   const [searchTerm, setSearchTerm] = useState('');
+  const [reports, setReports] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [showEditForm, setShowEditForm] = useState(false);
+  const [selectedReport, setSelectedReport] = useState(null);
   const { toast } = useToast();
-
-  const reports = [
-    {
-      id: 1,
-      title: 'Security Incident Report',
-      type: 'Incident',
-      docNumber: 'SIR-2024-001',
-      site: 'Corporate HQ Alpha',
-      officer: 'John Smith',
-      date: '2025-01-15',
-      status: 'Completed',
-      priority: 'High'
-    },
-    {
-      id: 2,
-      title: 'Daily Patrol Report',
-      type: 'Patrol',
-      docNumber: 'DPR-2024-045',
-      site: 'Metro Hospital East',
-      officer: 'Sarah Johnson',
-      date: '2025-01-15',
-      status: 'Under Review',
-      priority: 'Medium'
-    },
-  ];
 
   const handleViewReport = (id) => {
     toast({
       title: "🚧 This feature isn't implemented yet—but don't worry! You can request it in your next prompt! 🚀"
     });
+  };
+
+  const handleEditReport = (report) => {
+    setSelectedReport(report);
+    setShowEditForm(true);
   };
 
   const handleExportReport = (id) => {
@@ -61,11 +49,33 @@ const ReportList = () => {
       title: "🚧 This feature isn't implemented yet—but don't worry! You can request it in your next prompt! 🚀"
     });
   };
+
+  // Fetch reports from database
+  const fetchReports = async () => {
+    try {
+      setLoading(true);
+      const data = await reportsService.getReports();
+      setReports(data);
+    } catch (error) {
+      console.error('Error fetching reports:', error);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Failed to load reports. Please try again."
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchReports();
+  }, [toast]);
   
   const filteredReports = reports.filter(report => 
     report.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    report.docNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    report.officer.toLowerCase().includes(searchTerm.toLowerCase())
+    report.doc_number.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    report.officer_name.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   return (
@@ -100,6 +110,11 @@ const ReportList = () => {
                 <h3 className="text-xl font-semibold text-white">No Reports Found</h3>
                 <p className="text-gray-400">Try adjusting your search terms.</p>
             </div>
+        ) : loading ? (
+          <div className="text-center py-10">
+            <Loader2 className="w-8 h-8 text-blue-400 mx-auto mb-4 animate-spin" />
+            <p className="text-gray-400">Loading reports...</p>
+          </div>
         ) : (
         <div className="space-y-4">
           {filteredReports.map((report) => (
@@ -118,7 +133,7 @@ const ReportList = () => {
                       report.priority === 'Medium' ? 'bg-yellow-500/20 text-yellow-400' :
                       'bg-green-500/20 text-green-400'
                     }`}>
-                      {report.priority}
+                      {report.priority} Priority
                     </span>
                     <span className={`px-2 py-1 rounded-full text-xs font-medium ${
                       report.status === 'Completed' ? 'bg-green-500/20 text-green-400' :
@@ -128,54 +143,92 @@ const ReportList = () => {
                       {report.status}
                     </span>
                   </div>
+                  <div className="flex items-center space-x-4 text-sm text-gray-400 mb-2">
+                    <span className="flex items-center">
+                      <Hash className="w-4 h-4 mr-1" />
+                      {report.doc_number}
+                    </span>
+                    <span className="flex items-center">
+                      <FileText className="w-4 h-4 mr-1" />
+                      {report.report_type}
+                    </span>
+                    <span className="flex items-center">
+                      <Calendar className="w-4 h-4 mr-1" />
+                      {new Date(report.report_date).toLocaleDateString()}
+                    </span>
+                  </div>
                   <div className="flex items-center space-x-4 text-sm text-gray-400">
-                    <div className="flex items-center space-x-1">
-                      <Hash className="w-4 h-4" />
-                      <span>{report.docNumber}</span>
-                    </div>
+                    <span>Site: {report.site_name}</span>
                     <span>•</span>
-                    <span>{report.site}</span>
-                    <span>•</span>
-                    <span>Officer: {report.officer}</span>
-                    <span>•</span>
-                    <div className="flex items-center space-x-1">
-                      <Calendar className="w-4 h-4" />
-                      <span>{report.date}</span>
-                    </div>
+                    <span>Officer: {report.officer_name}</span>
                   </div>
                 </div>
-                <div className="flex items-center space-x-2">
-                  <Button 
-                    variant="outline" 
-                    size="sm"
-                    onClick={() => handleViewReport(report.id)}
-                    className="border-white/20 hover:bg-white/10"
-                  >
-                    <Eye className="w-4 h-4" />
-                  </Button>
-                  <Button 
-                    variant="outline" 
-                    size="sm"
-                    onClick={() => handleExportReport(report.id)}
-                    className="border-white/20 hover:bg-white/10"
-                  >
-                    <Download className="w-4 h-4" />
-                  </Button>
-                  <Button 
-                    variant="outline" 
-                    size="sm"
-                    onClick={() => handleShareReport(report.id)}
-                    className="border-white/20 hover:bg-white/10"
-                  >
-                    <Share className="w-4 h-4" />
-                  </Button>
-                </div>
+                                  <div className="flex space-x-2">
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={() => handleViewReport(report.id)}
+                      className="border-blue-500/30 hover:bg-blue-500/10"
+                    >
+                      <Eye className="w-4 h-4 mr-1" />
+                      View
+                    </Button>
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={() => handleEditReport(report)}
+                      className="border-yellow-500/30 hover:bg-yellow-500/10"
+                    >
+                      <Edit className="w-4 h-4 mr-1" />
+                      Edit
+                    </Button>
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={() => handleExportReport(report.id)}
+                      className="border-green-500/30 hover:bg-green-500/10"
+                    >
+                      <Download className="w-4 h-4 mr-1" />
+                      Export
+                    </Button>
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={() => handleShareReport(report.id)}
+                      className="border-purple-500/30 hover:bg-purple-500/10"
+                    >
+                      <Share className="w-4 h-4 mr-1" />
+                      Share
+                    </Button>
+                  </div>
               </div>
             </motion.div>
           ))}
         </div>
         )}
       </CardContent>
+
+      {/* Edit Report Form */}
+      {showEditForm && selectedReport && (
+        <ReportForm
+          report={selectedReport}
+          onClose={() => {
+            setShowEditForm(false);
+            setSelectedReport(null);
+          }}
+          onSuccess={(updatedReport) => {
+            toast({
+              title: "Report Updated",
+              description: "The report has been updated successfully.",
+              variant: "default"
+            });
+            // Refresh the reports list
+            fetchReports();
+            setShowEditForm(false);
+            setSelectedReport(null);
+          }}
+        />
+      )}
     </Card>
   );
 };

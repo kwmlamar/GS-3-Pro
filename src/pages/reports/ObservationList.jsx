@@ -1,32 +1,37 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/components/ui/use-toast';
-import { Eye } from 'lucide-react';
+import { Eye, Loader2 } from 'lucide-react';
+import { observationsService } from '@/lib/reportsService';
 
 const ObservationList = () => {
+  const [observations, setObservations] = useState([]);
+  const [loading, setLoading] = useState(true);
   const { toast } = useToast();
-  const observations = [
-    {
-      id: 1,
-      type: 'Maintenance Issue',
-      description: 'Lighting malfunction in parking area',
-      priority: 'Medium',
-      location: 'Parking Lot B',
-      observer: 'Sarah Johnson',
-      date: '2025-01-15'
-    },
-    {
-      id: 2,
-      type: 'Security Enhancement',
-      description: 'Recommend additional camera coverage',
-      priority: 'Low',
-      location: 'East Wing Corridor',
-      observer: 'Mike Rodriguez',
-      date: '2025-01-13'
-    }
-  ];
+
+  // Fetch observations from database
+  useEffect(() => {
+    const fetchObservations = async () => {
+      try {
+        setLoading(true);
+        const data = await observationsService.getObservations();
+        setObservations(data);
+      } catch (error) {
+        console.error('Error fetching observations:', error);
+        toast({
+          variant: "destructive",
+          title: "Error",
+          description: "Failed to load observations. Please try again."
+        });
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchObservations();
+  }, [toast]);
 
   return (
     <Card>
@@ -37,6 +42,18 @@ const ObservationList = () => {
         </CardTitle>
       </CardHeader>
       <CardContent>
+        {loading ? (
+          <div className="text-center py-10">
+            <Loader2 className="w-8 h-8 text-blue-400 mx-auto mb-4 animate-spin" />
+            <p className="text-gray-400">Loading observations...</p>
+          </div>
+        ) : observations.length === 0 ? (
+          <div className="text-center py-10">
+            <Eye className="w-12 h-12 text-gray-500 mx-auto mb-4" />
+            <h3 className="text-xl font-semibold text-white">No Observations Found</h3>
+            <p className="text-gray-400">No observations have been recorded yet.</p>
+          </div>
+        ) : (
         <div className="space-y-4">
           {observations.map((observation) => (
             <motion.div
@@ -61,9 +78,9 @@ const ObservationList = () => {
                   <div className="flex items-center space-x-4 text-sm text-gray-400">
                     <span>{observation.location}</span>
                     <span>•</span>
-                    <span>Observer: {observation.observer}</span>
+                    <span>Observer: {observation.observer_name}</span>
                     <span>•</span>
-                    <span>{observation.date}</span>
+                    <span>{new Date(observation.observation_date).toLocaleDateString()}</span>
                   </div>
                 </div>
                 <Button 
@@ -78,6 +95,7 @@ const ObservationList = () => {
             </motion.div>
           ))}
         </div>
+        )}
       </CardContent>
     </Card>
   );

@@ -33,12 +33,17 @@ const Sites = () => {
   const [currentSite, setCurrentSite] = useState(null);
   
   const [searchTerm, setSearchTerm] = useState('');
+  
+  // Debug the search term
+  console.log('🔍 Search term state:', searchTerm);
   const [activeTab, setActiveTab] = useState('hierarchy_view');
   const [selectedParentForDashboard, setSelectedParentForDashboard] = useState(null);
 
   const fetchSitesAndClients = useCallback(async () => {
     setLoading(true);
     try {
+      console.log('🔍 Fetching sites from database...');
+      // Fetch sites without join first
       const { data: sitesData, error: sitesError } = await supabase
         .from('sites')
         .select(`
@@ -48,16 +53,40 @@ const Sites = () => {
           parent_id, 
           client_id, 
           address, 
-          gps_coordinates,
-          parent:sites!parent_id ( name )
+          gps_coordinates
         `);
+      
+      console.log('📊 Database response:', { sitesData, sitesError });
 
       if (sitesError) throw sitesError;
+      
+      // Debug logging to see what data we're getting
+      console.log('Raw sites data:', sitesData);
+      
+      // Get parent names by fetching parent sites separately
+      const parentIds = [...new Set(sitesData.map(s => s.parent_id).filter(id => id !== null))];
+      let parentSites = [];
+      
+      if (parentIds.length > 0) {
+        const { data: parentData, error: parentError } = await supabase
+          .from('sites')
+          .select('id, name')
+          .in('id', parentIds);
+        
+        if (!parentError) {
+          parentSites = parentData || [];
+        }
+      }
+      
       const formattedSites = sitesData.map(s => ({
         ...s,
-        parent_name: s.parent?.name,
+        parent_name: s.parent_id ? parentSites.find(p => p.id === s.parent_id)?.name || null : null,
         client_name: null // No client relationship for now
       }));
+      
+      // Debug logging to see formatted data
+      console.log('Formatted sites data:', formattedSites);
+      
       setSites(formattedSites);
       setAllSitesForParentDropdown(sitesData.map(s => ({ id: s.id, name: s.name, type: s.type })));
 
@@ -103,11 +132,25 @@ const Sites = () => {
     }
   };
 
-  const filteredSites = sites.filter(site => 
-    site.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    (site.type && site.type.toLowerCase().includes(searchTerm.toLowerCase())) ||
-    (site.client_name && site.client_name.toLowerCase().includes(searchTerm.toLowerCase()))
-  );
+  const filteredSites = sites.filter(site => {
+    // If no search term, show all sites
+    if (!searchTerm) return true;
+    
+    // Otherwise, filter by search criteria
+    return site.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+           (site.type && site.type.toLowerCase().includes(searchTerm.toLowerCase())) ||
+           (site.client_name && site.client_name.toLowerCase().includes(searchTerm.toLowerCase()));
+  });
+
+  // Debug logging for filteredSites
+  console.log('Sites filtering debug:', {
+    searchTerm,
+    totalSites: sites.length,
+    filteredSitesCount: filteredSites.length,
+    sitesWithNames: sites.filter(s => s.name).length,
+    sitesWithoutNames: sites.filter(s => !s.name).length,
+    sampleSite: sites[0]
+  });
 
   const getDashboardData = (parentType, childType) => {
     if (selectedParentForDashboard) {

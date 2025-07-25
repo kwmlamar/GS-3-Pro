@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Outlet } from 'react-router-dom';
 import { Card, CardHeader, CardTitle } from '@/components/ui/card';
@@ -13,17 +13,17 @@ import {
   Eye
 } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
+import ReportForm from '@/components/reports/ReportForm';
 
 
 const ReportsLayout = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { toast } = useToast();
+  const [showCreateForm, setShowCreateForm] = useState(false);
 
   const handleCreateReport = () => {
-    toast({
-      title: "🚧 This feature isn't implemented yet—but don't worry! You can request it in your next prompt! 🚀"
-    });
+    setShowCreateForm(true);
   };
   
   const getActiveTab = () => {
@@ -70,6 +70,22 @@ const ReportsLayout = () => {
         </TabsList>
         <Outlet />
       </Tabs>
+
+      {/* Report Creation Form */}
+      {showCreateForm && (
+        <ReportForm
+          onClose={() => setShowCreateForm(false)}
+          onSuccess={(newReport) => {
+            toast({
+              title: "Report Created",
+              description: "The report has been created successfully.",
+              variant: "default"
+            });
+            // Optionally refresh the reports list
+            window.location.reload();
+          }}
+        />
+      )}
     </div>
   );
 };

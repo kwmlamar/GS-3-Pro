@@ -28,7 +28,7 @@ const EntityForm = ({ isEditing, currentSite, clients, allSitesForParent, onSucc
       setFormData({
         name: currentSite.name || '',
         type: currentSite.type || '',
-        parent_id: currentSite.parent_id || null,
+        parent_id: currentSite.parent_id ? currentSite.parent_id.toString() : null,
         client_id: currentSite.client_id || null,
         address: currentSite.address ? JSON.stringify(currentSite.address, null, 2) : '{}',
         gps_coordinates: currentSite.gps_coordinates ? JSON.stringify(currentSite.gps_coordinates, null, 2) : '{}',
@@ -44,7 +44,10 @@ const EntityForm = ({ isEditing, currentSite, clients, allSitesForParent, onSucc
   };
 
   const handleSelectChange = (name, value) => {
-    setFormData(prev => ({ ...prev, [name]: value === 'none' ? null : value }));
+    setFormData(prev => ({ 
+      ...prev, 
+      [name]: value === 'none' ? null : (name === 'parent_id' ? parseInt(value) : value)
+    }));
   };
 
   const validateJson = (jsonString, fieldName) => {
@@ -107,6 +110,17 @@ const EntityForm = ({ isEditing, currentSite, clients, allSitesForParent, onSucc
     // return allSitesForParent;
   }, [allSitesForParent, formData.type, currentSite]);
 
+  // Debug logging to help identify issues
+  console.log('EntityForm Debug:', {
+    isEditing,
+    currentSite,
+    formData,
+    parentCandidates: parentCandidates.length,
+    allSitesForParent: allSitesForParent.length,
+    parentIdType: typeof formData.parent_id,
+    parentIdValue: formData.parent_id
+  });
+
   return (
     <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }}>
       <Card className="ios-card">
@@ -141,11 +155,11 @@ const EntityForm = ({ isEditing, currentSite, clients, allSitesForParent, onSucc
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
                 <Label htmlFor="parent_id" className="text-gray-300">Parent Entity (Optional)</Label>
-                <Select name="parent_id" value={formData.parent_id || 'none'} onValueChange={(value) => handleSelectChange('parent_id', value)}>
+                <Select name="parent_id" value={formData.parent_id ? formData.parent_id.toString() : 'none'} onValueChange={(value) => handleSelectChange('parent_id', value)}>
                   <SelectTrigger className={iosInputStyle}><SelectValue placeholder="Select parent..." /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="none">None</SelectItem>
-                    {parentCandidates.map(s => <SelectItem key={s.id} value={s.id}>{s.name} ({s.type})</SelectItem>)}
+                    {parentCandidates.map(s => <SelectItem key={s.id} value={s.id.toString()}>{s.name} ({s.type})</SelectItem>)}
                   </SelectContent>
                 </Select>
                 <p className="text-xs text-slate-400 mt-1">Any entity can be a parent of any other entity type.</p>

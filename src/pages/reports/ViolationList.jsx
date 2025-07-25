@@ -1,34 +1,40 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/components/ui/use-toast';
 import { 
   AlertTriangle,
+  Loader2
 } from 'lucide-react';
+import { violationsService } from '@/lib/reportsService';
 
 const ViolationList = () => {
+  const [violations, setViolations] = useState([]);
+  const [loading, setLoading] = useState(true);
   const { toast } = useToast();
-  const violations = [
-    {
-      id: 1,
-      type: 'Safety Violation',
-      description: 'Improper PPE usage in restricted area',
-      severity: 'Medium',
-      location: 'Building A - Floor 3',
-      reportedBy: 'Lisa Chen',
-      date: '2025-01-15'
-    },
-    {
-      id: 2,
-      type: 'Security Breach',
-      description: 'Unauthorized access attempt',
-      severity: 'High',
-      location: 'Main Entrance',
-      reportedBy: 'John Smith',
-      date: '2025-01-14'
-    }
-  ];
+
+  // Fetch violations from database
+  useEffect(() => {
+    const fetchViolations = async () => {
+      try {
+        setLoading(true);
+        const data = await violationsService.getViolations();
+        setViolations(data);
+      } catch (error) {
+        console.error('Error fetching violations:', error);
+        toast({
+          variant: "destructive",
+          title: "Error",
+          description: "Failed to load violations. Please try again."
+        });
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchViolations();
+  }, [toast]);
 
   return (
     <Card>
@@ -39,6 +45,18 @@ const ViolationList = () => {
         </CardTitle>
       </CardHeader>
       <CardContent>
+        {loading ? (
+          <div className="text-center py-10">
+            <Loader2 className="w-8 h-8 text-red-400 mx-auto mb-4 animate-spin" />
+            <p className="text-gray-400">Loading violations...</p>
+          </div>
+        ) : violations.length === 0 ? (
+          <div className="text-center py-10">
+            <AlertTriangle className="w-12 h-12 text-gray-500 mx-auto mb-4" />
+            <h3 className="text-xl font-semibold text-white">No Violations Found</h3>
+            <p className="text-gray-400">No violations have been reported yet.</p>
+          </div>
+        ) : (
         <div className="space-y-4">
           {violations.map((violation) => (
             <motion.div
@@ -63,9 +81,9 @@ const ViolationList = () => {
                   <div className="flex items-center space-x-4 text-sm text-gray-400">
                     <span>{violation.location}</span>
                     <span>•</span>
-                    <span>Reported by: {violation.reportedBy}</span>
+                    <span>Reported by: {violation.reported_by_name}</span>
                     <span>•</span>
-                    <span>{violation.date}</span>
+                    <span>{new Date(violation.violation_date).toLocaleDateString()}</span>
                   </div>
                 </div>
                 <Button 
@@ -80,6 +98,7 @@ const ViolationList = () => {
             </motion.div>
           ))}
         </div>
+        )}
       </CardContent>
     </Card>
   );

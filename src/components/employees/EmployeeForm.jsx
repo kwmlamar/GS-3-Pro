@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -9,6 +9,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/components/ui/use-toast';
 import { X, Save, UserPlus, Edit } from 'lucide-react';
 import { createEmployee, updateEmployee, EMPLOYEE_TYPES } from '@/lib/employeeService';
+import { supabase } from '@/lib/supabaseClient';
 
 const EmployeeForm = ({ employee = null, onClose, onSuccess }) => {
   const [formData, setFormData] = useState({
@@ -16,6 +17,7 @@ const EmployeeForm = ({ employee = null, onClose, onSuccess }) => {
     role: '',
     type: '',
     site: '',
+    department: '',
     status: 'Active',
     compliance: 100,
     certifications: '',
@@ -24,9 +26,58 @@ const EmployeeForm = ({ employee = null, onClose, onSuccess }) => {
     hire_date: new Date().toISOString().split('T')[0]
   });
   const [loading, setLoading] = useState(false);
+  const [sites, setSites] = useState([]);
+  const [sitesLoading, setSitesLoading] = useState(false);
   const { toast } = useToast();
 
   const isEditing = !!employee;
+
+  // Fetch sites for the dropdown
+  const fetchSites = useCallback(async () => {
+    setSitesLoading(true);
+    try {
+      const { data: sitesData, error: sitesError } = await supabase
+        .from('sites')
+        .select(`
+          id, 
+          name, 
+          type, 
+          parent_id
+        `);
+      
+      if (sitesError) throw sitesError;
+      
+      // Get parent names by fetching parent sites separately
+      const parentIds = [...new Set(sitesData.map(s => s.parent_id).filter(id => id !== null))];
+      let parentSites = [];
+      
+      if (parentIds.length > 0) {
+        const { data: parentData, error: parentError } = await supabase
+          .from('sites')
+          .select('id, name')
+          .in('id', parentIds);
+        
+        if (!parentError) {
+          parentSites = parentData || [];
+        }
+      }
+      
+      const formattedSites = sitesData.map(s => ({
+        ...s,
+        parent_name: s.parent_id ? parentSites.find(p => p.id === s.parent_id)?.name || null : null,
+      }));
+      
+      setSites(formattedSites);
+    } catch (error) {
+      toast({ variant: 'destructive', title: 'Error fetching sites', description: error.message });
+    } finally {
+      setSitesLoading(false);
+    }
+  }, [toast]);
+
+  useEffect(() => {
+    fetchSites();
+  }, [fetchSites]);
 
   useEffect(() => {
     if (employee) {
@@ -35,6 +86,7 @@ const EmployeeForm = ({ employee = null, onClose, onSuccess }) => {
         role: employee.role || '',
         type: employee.type || '',
         site: employee.site || '',
+        department: employee.department || '',
         status: employee.status || 'Active',
         compliance: employee.compliance || 100,
         certifications: Array.isArray(employee.certifications) 
@@ -79,7 +131,7 @@ const EmployeeForm = ({ employee = null, onClose, onSuccess }) => {
       }
 
       toast({
-        title: isEditing ? "Employee Updated" : "Employee Added",
+        title: isEditing ? "Security Staff Updated" : "Security Staff Added",
         description: `${formData.name} has been ${isEditing ? 'updated' : 'added'} successfully.`,
         variant: "default"
       });
@@ -90,7 +142,7 @@ const EmployeeForm = ({ employee = null, onClose, onSuccess }) => {
       console.error('Error saving employee:', error);
       toast({
         title: "Error",
-        description: error.message || "Failed to save employee. Please try again.",
+        description: error.message || "Failed to save security staff. Please try again.",
         variant: "destructive"
       });
     } finally {
@@ -120,7 +172,7 @@ const EmployeeForm = ({ employee = null, onClose, onSuccess }) => {
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
               <CardTitle className="flex items-center space-x-2 text-white">
                 {isEditing ? <Edit className="w-5 h-5 text-blue-400" /> : <UserPlus className="w-5 h-5 text-green-400" />}
-                <span>{isEditing ? 'Edit Employee' : 'Add New Employee'}</span>
+                <span>{isEditing ? 'Edit Security Staff' : 'Add New Security Staff'}</span>
               </CardTitle>
               <Button
                 variant="ghost"
@@ -159,10 +211,21 @@ const EmployeeForm = ({ employee = null, onClose, onSuccess }) => {
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="type" className="text-white">Employee Type</Label>
+                    <Label htmlFor="department" className="text-white">Department</Label>
+                    <Input
+                      id="department"
+                      value={formData.department}
+                      onChange={(e) => handleInputChange('department', e.target.value)}
+                      placeholder="Security Operations"
+                      className="bg-slate-700/50 border-slate-600 text-white"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="type" className="text-white">Security Staff Type</Label>
                     <Select value={formData.type} onValueChange={(value) => handleInputChange('type', value)}>
                       <SelectTrigger className="bg-slate-700/50 border-slate-600 text-white">
-                        <SelectValue placeholder="Select employee type" />
+                        <SelectValue placeholder="Select security staff type" />
                       </SelectTrigger>
                       <SelectContent className="bg-slate-800 border-slate-600">
                         {employeeTypeOptions.map((type) => (
@@ -175,15 +238,23 @@ const EmployeeForm = ({ employee = null, onClose, onSuccess }) => {
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="site" className="text-white">Site</Label>
-                    <Input
-                      id="site"
-                      value={formData.site}
-                      onChange={(e) => handleInputChange('site', e.target.value)}
-                      placeholder="Corporate HQ Alpha"
-                      className="bg-slate-700/50 border-slate-600 text-white"
-                      required
-                    />
+                    <Label htmlFor="site" className="text-white">Entity</Label>
+                    <Select 
+                      value={formData.site} 
+                      onValueChange={(value) => handleInputChange('site', value)}
+                      disabled={sitesLoading}
+                    >
+                      <SelectTrigger className="bg-slate-700/50 border-slate-600 text-white">
+                        <SelectValue placeholder={sitesLoading ? "Loading entities..." : "Select an entity..."} />
+                      </SelectTrigger>
+                      <SelectContent className="bg-slate-800 border-slate-600">
+                        {sites.map((site) => (
+                          <SelectItem key={site.id} value={site.name} className="text-white">
+                            {site.name} ({site.type}) {site.parent_name ? `- ${site.parent_name}` : ''}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </div>
 
                   <div className="space-y-2">
@@ -284,7 +355,7 @@ const EmployeeForm = ({ employee = null, onClose, onSuccess }) => {
                     ) : (
                       <div className="flex items-center space-x-2">
                         <Save className="w-4 h-4" />
-                        <span>{isEditing ? 'Update' : 'Save'} Employee</span>
+                        <span>{isEditing ? 'Update' : 'Save'} Security Staff</span>
                       </div>
                     )}
                   </Button>
