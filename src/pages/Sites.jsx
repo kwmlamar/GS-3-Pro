@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
-import { Card, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -33,7 +33,7 @@ const Sites = () => {
   const [currentSite, setCurrentSite] = useState(null);
   
   const [searchTerm, setSearchTerm] = useState('');
-  const [activeTab, setActiveTab] = useState('sites_list');
+  const [activeTab, setActiveTab] = useState('hierarchy_view');
   const [selectedParentForDashboard, setSelectedParentForDashboard] = useState(null);
 
   const fetchSitesAndClients = useCallback(async () => {
@@ -147,7 +147,7 @@ const Sites = () => {
               <Network className="w-8 h-8 mr-3 text-blue-400" />
               Hierarchy Builder
             </h1>
-            <p className="text-gray-400 mt-1">Manage sites, regions, national, and global entities.</p>
+            <p className="text-gray-400 mt-1">Manage sites, regions, national, and global entities with flexible parent-child relationships.</p>
           </div>
         </div>
         {!showForm && (
@@ -171,6 +171,7 @@ const Sites = () => {
         <Tabs defaultValue={activeTab} onValueChange={setActiveTab} className="space-y-6">
           <TabsList className={`${iosTabsListStyle} border-b border-slate-700`}>
             <TabsTrigger value="sites_list" className={`${iosTabsTriggerStyle} ${iosTabsActiveTriggerStyle}`}>Entities List</TabsTrigger>
+            <TabsTrigger value="hierarchy_view" className={`${iosTabsTriggerStyle} ${iosTabsActiveTriggerStyle}`}>Hierarchy View</TabsTrigger>
             <TabsTrigger value="regional_dashboard" className={`${iosTabsTriggerStyle} ${iosTabsActiveTriggerStyle}`}>Regional View</TabsTrigger>
             <TabsTrigger value="national_dashboard" className={`${iosTabsTriggerStyle} ${iosTabsActiveTriggerStyle}`}>National View</TabsTrigger>
             <TabsTrigger value="global_dashboard" className={`${iosTabsTriggerStyle} ${iosTabsActiveTriggerStyle}`}>Global View</TabsTrigger>
@@ -212,6 +213,67 @@ const Sites = () => {
                 onEdit={handleEdit}
                 onDelete={handleDelete}
               />
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="hierarchy_view">
+            <Card className="ios-card">
+              <CardHeader>
+                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center">
+                  <CardTitle className="text-xl text-white flex items-center mb-2 sm:mb-0">
+                    <Network className="w-5 h-5 mr-2 text-blue-400" />
+                    Flexible Hierarchy View
+                  </CardTitle>
+                  <Select 
+                    onValueChange={(value) => setSelectedParentForDashboard(value === 'none' ? null : parseInt(value))} 
+                    value={selectedParentForDashboard || 'none'}
+                  >
+                    <SelectTrigger className={`${iosInputStyle} w-full sm:w-auto sm:max-w-xs`}>
+                      <SelectValue placeholder="Select parent entity..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">Overview (All Entities)</SelectItem>
+                      {sites.map(s => <SelectItem key={s.id} value={s.id.toString()}>{s.name} ({s.type})</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <CardDescription className="text-gray-400 mt-2">
+                  {selectedParentForDashboard ? 
+                    `Showing children of ${sites.find(s => s.id === selectedParentForDashboard)?.name || 'selected entity'}.` : 
+                    'View all entities and their relationships. Select a parent to see its children.'
+                  }
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                {loading ? <p className="text-center text-gray-400 py-4">Loading data...</p> :
+                 sites.length === 0 ? (
+                  <div className="text-center py-12 min-h-[200px] flex flex-col items-center justify-center">
+                    <Network className="w-12 h-12 mx-auto text-slate-500 mb-3 opacity-70" />
+                    <p className="text-gray-400">No entities found.</p>
+                  </div>
+                 ) : (
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {(selectedParentForDashboard ? 
+                      sites.filter(s => s.parent_id === selectedParentForDashboard) : 
+                      sites
+                    ).map(item => (
+                      <Card key={item.id} className="bg-slate-800/50 border-slate-700 hover-lift">
+                        <CardHeader>
+                          <CardTitle className="text-lg text-sky-300">{item.name}</CardTitle>
+                          <CardDescription className="text-slate-400">{item.type ? item.type.charAt(0).toUpperCase() + item.type.slice(1).replace('_', ' ') : 'N/A'}</CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                          <p className="text-xs text-slate-500">Parent: {item.parent_name || 'None'}</p>
+                          <p className="text-xs text-slate-500 mt-1">Address: {item.address ? JSON.stringify(item.address) : 'N/A'}</p>
+                          <p className="text-xs text-slate-500 mt-1">Client: {item.client_name || 'N/A'}</p>
+                          <Button size="sm" variant="link" className="text-blue-400 hover:text-blue-300 p-0 mt-2 text-xs" onClick={() => toast({title: "🚧 Feature Not Implemented"})}>View Details</Button>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                 )
+                }
+              </CardContent>
             </Card>
           </TabsContent>
 

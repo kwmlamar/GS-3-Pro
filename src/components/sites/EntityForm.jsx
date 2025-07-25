@@ -94,12 +94,18 @@ const EntityForm = ({ isEditing, currentSite, clients, allSitesForParent, onSucc
 
   const parentCandidates = useMemo(() => {
     if (!formData.type) return allSitesForParent;
-    if (formData.type === 'site') return allSitesForParent.filter(s => s.type === 'region' || s.type === 'national' || s.type === 'global');
-    if (formData.type === 'region') return allSitesForParent.filter(s => s.type === 'national' || s.type === 'global');
-    if (formData.type === 'national') return allSitesForParent.filter(s => s.type === 'global');
-    if (formData.type === 'global') return [];
-    return allSitesForParent;
-  }, [allSitesForParent, formData.type]);
+    
+    // Allow flexible parent-child relationships - any entity can be a parent of any other entity
+    // Filter out the current entity being edited to prevent self-referencing
+    return allSitesForParent.filter(s => !currentSite || s.id !== currentSite.id);
+    
+    // Previous restrictive logic commented out:
+    // if (formData.type === 'site') return allSitesForParent.filter(s => s.type === 'region' || s.type === 'national' || s.type === 'global');
+    // if (formData.type === 'region') return allSitesForParent.filter(s => s.type === 'national' || s.type === 'global');
+    // if (formData.type === 'national') return allSitesForParent.filter(s => s.type === 'global');
+    // if (formData.type === 'global') return [];
+    // return allSitesForParent;
+  }, [allSitesForParent, formData.type, currentSite]);
 
   return (
     <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }}>
@@ -135,14 +141,14 @@ const EntityForm = ({ isEditing, currentSite, clients, allSitesForParent, onSucc
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
                 <Label htmlFor="parent_id" className="text-gray-300">Parent Entity (Optional)</Label>
-                <Select name="parent_id" value={formData.parent_id || 'none'} onValueChange={(value) => handleSelectChange('parent_id', value)} disabled={formData.type === 'global'}>
+                <Select name="parent_id" value={formData.parent_id || 'none'} onValueChange={(value) => handleSelectChange('parent_id', value)}>
                   <SelectTrigger className={iosInputStyle}><SelectValue placeholder="Select parent..." /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="none">None</SelectItem>
-                    {parentCandidates.filter(s => !currentSite || s.id !== currentSite.id).map(s => <SelectItem key={s.id} value={s.id}>{s.name} ({s.type})</SelectItem>)}
+                    {parentCandidates.map(s => <SelectItem key={s.id} value={s.id}>{s.name} ({s.type})</SelectItem>)}
                   </SelectContent>
                 </Select>
-                {formData.type === 'global' && <p className="text-xs text-slate-400 mt-1">Global entities cannot have a parent.</p>}
+                <p className="text-xs text-slate-400 mt-1">Any entity can be a parent of any other entity type.</p>
               </div>
               <div>
                 <Label htmlFor="client_id" className="text-gray-300">Client (Optional)</Label>
