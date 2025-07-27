@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/components/ui/use-toast';
 import { X, Save, UserPlus, Edit } from 'lucide-react';
-import { createEmployee, updateEmployee, EMPLOYEE_TYPES } from '@/lib/employeeService';
+import { createEmployee, updateEmployee, EMPLOYEE_TYPES, getDepartments, createDepartment } from '@/lib/employeeService';
 import { supabase } from '@/lib/supabaseClient';
 
 const EmployeeForm = ({ employee = null, onClose, onSuccess, staffType = 'security' }) => {
@@ -28,6 +28,10 @@ const EmployeeForm = ({ employee = null, onClose, onSuccess, staffType = 'securi
   const [loading, setLoading] = useState(false);
   const [sites, setSites] = useState([]);
   const [sitesLoading, setSitesLoading] = useState(false);
+  const [departments, setDepartments] = useState([]);
+  const [departmentsLoading, setDepartmentsLoading] = useState(false);
+  const [showNewDepartmentInput, setShowNewDepartmentInput] = useState(false);
+  const [newDepartment, setNewDepartment] = useState('');
   const { toast } = useToast();
 
   const isEditing = !!employee;
@@ -75,9 +79,24 @@ const EmployeeForm = ({ employee = null, onClose, onSuccess, staffType = 'securi
     }
   }, [toast]);
 
+  // Fetch departments for the dropdown
+  const fetchDepartments = useCallback(async () => {
+    setDepartmentsLoading(true);
+    try {
+      const { data, error } = await getDepartments();
+      if (error) throw error;
+      setDepartments(data || []);
+    } catch (error) {
+      toast({ variant: 'destructive', title: 'Error fetching departments', description: error.message });
+    } finally {
+      setDepartmentsLoading(false);
+    }
+  }, [toast]);
+
   useEffect(() => {
     fetchSites();
-  }, [fetchSites]);
+    fetchDepartments();
+  }, [fetchSites, fetchDepartments]);
 
   useEffect(() => {
     if (employee) {
@@ -104,6 +123,58 @@ const EmployeeForm = ({ employee = null, onClose, onSuccess, staffType = 'securi
       ...prev,
       [field]: value
     }));
+  };
+
+  const handleDepartmentChange = (value) => {
+    if (value === 'add_new') {
+      setShowNewDepartmentInput(true);
+      setNewDepartment('');
+    } else {
+      setShowNewDepartmentInput(false);
+      setFormData(prev => ({
+        ...prev,
+        department: value
+      }));
+    }
+  };
+
+  const handleNewDepartmentSubmit = async () => {
+    if (newDepartment.trim()) {
+      try {
+        const { data, error } = await createDepartment({
+          name: newDepartment.trim(),
+          description: `Department for ${newDepartment.trim()}`,
+          is_active: true
+        });
+
+        if (error) throw error;
+
+        // Add the new department to the list
+        setDepartments(prev => [...prev, data]);
+        
+        // Set the form data to use the new department
+        setFormData(prev => ({
+          ...prev,
+          department: data.name
+        }));
+        
+        setShowNewDepartmentInput(false);
+        setNewDepartment('');
+        
+        toast({
+          title: "Department Created",
+          description: `${newDepartment.trim()} has been added successfully.`,
+          variant: "default"
+        });
+      } catch (error) {
+        console.error('Error creating department:', error);
+        toast({
+          title: "Error",
+          description: "Failed to create department. Please try again.",
+          variant: "destructive"
+        });
+      }
+    }
   };
 
   const handleSubmit = async (e) => {
@@ -214,13 +285,64 @@ const EmployeeForm = ({ employee = null, onClose, onSuccess, staffType = 'securi
 
                   <div className="space-y-2">
                     <Label htmlFor="department" className="text-white">Department</Label>
-                    <Input
-                      id="department"
-                      value={formData.department}
-                      onChange={(e) => handleInputChange('department', e.target.value)}
-                      placeholder="Security Operations"
-                      className="bg-slate-700/50 border-slate-600 text-white"
-                    />
+                    {showNewDepartmentInput ? (
+                      <div className="space-y-2">
+                        <Input
+                          value={newDepartment}
+                          onChange={(e) => setNewDepartment(e.target.value)}
+                          placeholder="Enter new department name"
+                          className="bg-slate-700/50 border-slate-600 text-white"
+                          onKeyPress={(e) => {
+                            if (e.key === 'Enter') {
+                              e.preventDefault();
+                              handleNewDepartmentSubmit();
+                            }
+                          }}
+                        />
+                        <div className="flex space-x-2">
+                          <Button
+                            type="button"
+                            size="sm"
+                            onClick={handleNewDepartmentSubmit}
+                            className="bg-green-600 hover:bg-green-700 text-xs"
+                          >
+                            Add Department
+                          </Button>
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant="outline"
+                            onClick={() => {
+                              setShowNewDepartmentInput(false);
+                              setNewDepartment('');
+                            }}
+                            className="border-slate-600 text-slate-300 hover:bg-slate-700 text-xs"
+                          >
+                            Cancel
+                          </Button>
+                        </div>
+                      </div>
+                    ) : (
+                      <Select 
+                        value={formData.department} 
+                        onValueChange={handleDepartmentChange}
+                        disabled={departmentsLoading}
+                      >
+                        <SelectTrigger className="bg-slate-700/50 border-slate-600 text-white">
+                          <SelectValue placeholder={departmentsLoading ? "Loading departments..." : "Select department or add new..."} />
+                        </SelectTrigger>
+                        <SelectContent className="bg-slate-800 border-slate-600">
+                          {departments.map((dept) => (
+                            <SelectItem key={dept.id} value={dept.name} className="text-white">
+                              {dept.name}
+                            </SelectItem>
+                          ))}
+                          <SelectItem value="add_new" className="text-blue-400 font-medium">
+                            + Add New Department
+                          </SelectItem>
+                        </SelectContent>
+                      </Select>
+                    )}
                   </div>
 
                   <div className="space-y-2">

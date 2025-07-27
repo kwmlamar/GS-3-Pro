@@ -357,4 +357,38 @@ export const getOnboardingStats = async () => {
     console.error('Error fetching onboarding stats:', error);
     return { data: null, error };
   }
+};
+
+// Get departments from the departments table
+export const getDepartments = async () => {
+  try {
+    const { data, error } = await supabase
+      .from('departments')
+      .select('id, name, description, is_active')
+      .eq('is_active', true)
+      .order('name');
+
+    if (error) throw error;
+    return { data, error: null };
+  } catch (error) {
+    console.error('Error fetching departments:', error);
+    return { data: null, error };
+  }
+};
+
+// Create a new department
+export const createDepartment = async (departmentData) => {
+  try {
+    const { data, error } = await supabase
+      .from('departments')
+      .insert([departmentData])
+      .select()
+      .single();
+
+    if (error) throw error;
+    return { data, error: null };
+  } catch (error) {
+    console.error('Error creating department:', error);
+    return { data: null, error };
+  }
 }; 
