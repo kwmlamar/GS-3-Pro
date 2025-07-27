@@ -2,7 +2,7 @@ import React from 'react';
 import { NavLink, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { 
-  LayoutDashboard, ShieldCheck, Users, Briefcase, GraduationCap, BookOpen, Nfc, BarChart2, MessageSquare, FileText, Settings, HardHat, ShieldAlert, X, CalendarDays, UserCheck, FileArchive, AlertTriangle, RadioTower, GitBranch, LockKeyhole, Network, Code, Building2
+  LayoutDashboard, ShieldCheck, Users, Briefcase, GraduationCap, BookOpen, Nfc, BarChart2, MessageSquare, FileText, Settings, HardHat, ShieldAlert, X, CalendarDays, UserCheck, FileArchive, AlertTriangle, RadioTower, GitBranch, LockKeyhole, Network, Code, Building2, Archive
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -25,6 +25,7 @@ const navItems = [
   { icon: Users, label: 'Security Staff', path: '/employees', roles: supervisorAndAbove },
   { icon: Building2, label: 'Entity Staff', path: '/entity-staff', roles: supervisorAndAbove },
   { icon: UserCheck, label: 'Performance', path: '/performance', roles: supervisorAndAbove },
+  { icon: Archive, label: 'Archive', path: '/archive', roles: supervisorAndAbove },
   { icon: ShieldAlert, label: 'Health & Safety', path: '/health-safety', roles: [...commonRoles, ...executiveRoles] },
   { icon: GraduationCap, label: 'Training', path: '/training', roles: [...commonRoles, ...clientRoles] },
   { icon: BookOpen, label: 'Live Classes', path: '/live-classes', roles: [...commonRoles, ...clientRoles] },

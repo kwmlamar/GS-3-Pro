@@ -11,7 +11,7 @@ CREATE TABLE IF NOT EXISTS employees (
   role VARCHAR(255) NOT NULL,
   type VARCHAR(100) NOT NULL,
   site VARCHAR(255) NOT NULL,
-  status VARCHAR(50) DEFAULT 'Active',
+  status VARCHAR(50) DEFAULT 'Active' CHECK (status IN ('Active', 'Inactive', 'On Leave', 'Terminated', 'Archived')),
   compliance INTEGER DEFAULT 100 CHECK (compliance >= 0 AND compliance <= 100),
   certifications TEXT[] DEFAULT '{}',
   email VARCHAR(255),

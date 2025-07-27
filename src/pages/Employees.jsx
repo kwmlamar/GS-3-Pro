@@ -52,10 +52,13 @@ const Employees = () => {
 
   // Filter employees when search term changes
   useEffect(() => {
+    // First filter out archived employees
+    const activeEmployees = employees.filter(emp => emp.status !== 'Archived');
+    
     if (searchTerm.trim() === '') {
-      setFilteredEmployees(employees);
+      setFilteredEmployees(activeEmployees);
     } else {
-      const filtered = employees.filter(emp => 
+      const filtered = activeEmployees.filter(emp => 
         emp.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
         emp.role.toLowerCase().includes(searchTerm.toLowerCase()) ||
         emp.site.toLowerCase().includes(searchTerm.toLowerCase())

@@ -22,6 +22,7 @@ import ExternalApp from '@/pages/ExternalApp';
 import AdminSettings from '@/pages/AdminSettings';
 import HealthSafety from '@/pages/HealthSafety';
 import DeveloperPage from '@/pages/DeveloperPage';
+import Archive from '@/pages/Archive';
 import { supabase } from '@/lib/supabaseClient';
 import { useToast } from '@/components/ui/use-toast';
 
@@ -149,6 +150,7 @@ function App() {
               <Route path="iso" element={<ISO />} />
               <Route path="incident-command" element={<IncidentCommand />} />
               <Route path="health-safety" element={<HealthSafety />} />
+              <Route path="archive" element={<Archive />} />
               <Route path="external-app" element={<ExternalApp />} />
               <Route path="login-management" element={<LoginManagementPage />} />
               <Route path="admin-settings" element={userRole === 'admin' ? <AdminSettings /> : <Navigate to="/" replace />} />

@@ -418,6 +418,7 @@ const EmployeeForm = ({ employee = null, onClose, onSuccess, staffType = 'securi
                         <SelectItem value="Inactive" className="text-white">Inactive</SelectItem>
                         <SelectItem value="On Leave" className="text-white">On Leave</SelectItem>
                         <SelectItem value="Terminated" className="text-white">Terminated</SelectItem>
+                        <SelectItem value="Archived" className="text-white">Archived</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>

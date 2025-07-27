@@ -17,13 +17,74 @@ import {
   CheckCircle,
   AlertCircle,
   Clock,
-  GraduationCap
+  GraduationCap,
+  Archive,
+  RotateCcw
 } from 'lucide-react';
 import EmployeeForm from './EmployeeForm';
+import { updateEmployee } from '@/lib/employeeService';
 
 const EmployeeDetail = ({ employee, onClose, onUpdate, staffType = 'security' }) => {
   const [showEditForm, setShowEditForm] = useState(false);
   const { toast } = useToast();
+
+  const handleArchive = async () => {
+    if (!window.confirm(`Are you sure you want to archive ${employee.name}? They will be moved to the archive.`)) {
+      return;
+    }
+
+    try {
+      const { error } = await updateEmployee(employee.id, {
+        ...employee,
+        status: 'Archived'
+      });
+
+      if (error) throw error;
+
+      toast({
+        title: "Employee Archived",
+        description: `${employee.name} has been moved to the archive.`,
+        variant: "default"
+      });
+
+      onUpdate?.({ ...employee, status: 'Archived' });
+      onClose();
+    } catch (error) {
+      console.error('Error archiving employee:', error);
+      toast({
+        title: "Error",
+        description: "Failed to archive employee.",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const handleRestore = async () => {
+    try {
+      const { error } = await updateEmployee(employee.id, {
+        ...employee,
+        status: 'Active'
+      });
+
+      if (error) throw error;
+
+      toast({
+        title: "Employee Restored",
+        description: `${employee.name} has been restored to active status.`,
+        variant: "default"
+      });
+
+      onUpdate?.({ ...employee, status: 'Active' });
+      onClose();
+    } catch (error) {
+      console.error('Error restoring employee:', error);
+      toast({
+        title: "Error",
+        description: "Failed to restore employee.",
+        variant: "destructive"
+      });
+    }
+  };
 
   const getStatusColor = (status) => {
     switch (status) {
@@ -31,6 +92,7 @@ const EmployeeDetail = ({ employee, onClose, onUpdate, staffType = 'security' })
       case 'Inactive': return 'bg-red-500/20 text-red-400 border-red-500/30';
       case 'On Leave': return 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30';
       case 'Terminated': return 'bg-gray-500/20 text-gray-400 border-gray-500/30';
+      case 'Archived': return 'bg-purple-500/20 text-purple-400 border-purple-500/30';
       default: return 'bg-gray-500/20 text-gray-400 border-gray-500/30';
     }
   };
@@ -248,7 +310,7 @@ const EmployeeDetail = ({ employee, onClose, onUpdate, staffType = 'security' })
                   <CardTitle className="text-white text-lg">Quick Actions</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
                     <Button
                       variant="outline"
                       className="border-slate-600 text-slate-300 hover:bg-slate-700"
@@ -273,6 +335,24 @@ const EmployeeDetail = ({ employee, onClose, onUpdate, staffType = 'security' })
                       <Star className="w-4 h-4 mr-2" />
                       Performance Review
                     </Button>
+                    {employee.status === 'Archived' ? (
+                      <Button
+                        onClick={handleRestore}
+                        className="bg-green-600 hover:bg-green-700"
+                      >
+                        <RotateCcw className="w-4 h-4 mr-2" />
+                        Restore
+                      </Button>
+                    ) : (
+                      <Button
+                        variant="outline"
+                        onClick={handleArchive}
+                        className="border-purple-600 text-purple-300 hover:bg-purple-700/20"
+                      >
+                        <Archive className="w-4 h-4 mr-2" />
+                        Archive
+                      </Button>
+                    )}
                   </div>
                 </CardContent>
               </Card>
