@@ -214,25 +214,38 @@ const EmployeeDetail = ({ employee, onClose, onUpdate, staffType = 'security' })
                         <span className="text-gray-300">{employee.phone}</span>
                       </div>
                     )}
-                    <div className="flex items-center space-x-3">
-                      <MapPin className="w-4 h-4 text-blue-400" />
-                      <span className="text-gray-300">
-                        {employee.entities && employee.entities.length > 0 
-                          ? employee.entities.map((entity, index) => (
-                              <span key={entity.site_id} className="inline-flex items-center">
-                                {entity.sites?.name || 'Unknown Entity'}
-                                {entity.is_primary && (
-                                  <Badge className="ml-2 bg-green-500/20 text-green-400 border-green-500/30 text-xs">
-                                    Primary
-                                  </Badge>
-                                )}
-                                {index < employee.entities.length - 1 && <span className="mx-1">, </span>}
-                              </span>
-                            ))
-                          : employee.site || 'No entities assigned'
-                        }
-                      </span>
-                    </div>
+                                    <div className="flex items-center space-x-3">
+                  <MapPin className="w-4 h-4 text-blue-400" />
+                  <span className="text-gray-300">
+                    {employee.entities && employee.entities.length > 0
+                      ? employee.entities.map((entity, index) => (
+                          <span key={entity.site_id} className="inline-flex items-center">
+                            {entity.sites?.name || 'Unknown Entity'}
+                            {entity.is_primary && (
+                              <Badge className="ml-2 bg-green-500/20 text-green-400 border-green-500/30 text-xs">
+                                Primary
+                              </Badge>
+                            )}
+                            {index < employee.entities.length - 1 && <span className="mx-1">, </span>}
+                          </span>
+                        ))
+                      : employee.site || 'No entities assigned'
+                    }
+                  </span>
+                </div>
+
+                {/* Supervisor Information */}
+                {employee.supervisor_name && (
+                  <div className="flex items-center space-x-3">
+                    <User className="w-4 h-4 text-purple-400" />
+                    <span className="text-gray-300">
+                      Reports to: <span className="text-purple-300 font-medium">{employee.supervisor_name}</span>
+                      {employee.supervisor_role && (
+                        <span className="text-gray-400 ml-1">({employee.supervisor_role})</span>
+                      )}
+                    </span>
+                  </div>
+                )}
                     <div className="flex items-center space-x-3">
                       <Calendar className="w-4 h-4 text-blue-400" />
                       <span className="text-gray-300">

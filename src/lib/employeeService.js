@@ -560,4 +560,111 @@ export const createDepartment = async (departmentData) => {
     console.error('Error creating department:', error);
     return { data: null, error };
   }
+};
+
+// Chain of Command Functions
+
+// Get all employees that can be supervisors (excluding the current employee if editing)
+export const getPotentialSupervisors = async (excludeEmployeeId = null) => {
+  try {
+    let query = supabase
+      .from('employees')
+      .select('id, name, role, type, status')
+      .eq('status', 'Active')
+      .order('name');
+
+    if (excludeEmployeeId) {
+      query = query.neq('id', excludeEmployeeId);
+    }
+
+    const { data, error } = await query;
+    if (error) throw error;
+    return { data, error: null };
+  } catch (error) {
+    return { data: null, error };
+  }
+};
+
+// Get direct reports of an employee
+export const getDirectReports = async (employeeId) => {
+  try {
+    const { data, error } = await supabase
+      .rpc('get_direct_reports', { employee_id: employeeId });
+
+    if (error) throw error;
+    return { data, error: null };
+  } catch (error) {
+    return { data: null, error };
+  }
+};
+
+// Get full reporting chain (all levels below an employee)
+export const getFullReportingChain = async (employeeId) => {
+  try {
+    const { data, error } = await supabase
+      .rpc('get_full_reporting_chain', { employee_id: employeeId });
+
+    if (error) throw error;
+    return { data, error: null };
+  } catch (error) {
+    return { data: null, error };
+  }
+};
+
+// Get supervisor chain (all levels above an employee)
+export const getSupervisorChain = async (employeeId) => {
+  try {
+    const { data, error } = await supabase
+      .rpc('get_supervisor_chain', { employee_id: employeeId });
+
+    if (error) throw error;
+    return { data, error: null };
+  } catch (error) {
+    return { data: null, error };
+  }
+};
+
+// Get organizational chart data
+export const getOrganizationalChart = async () => {
+  try {
+    const { data, error } = await supabase
+      .rpc('get_organizational_chart');
+
+    if (error) throw error;
+    return { data, error: null };
+  } catch (error) {
+    return { data: null, error };
+  }
+};
+
+// Update employee supervisor
+export const updateEmployeeSupervisor = async (employeeId, supervisorId) => {
+  try {
+    const { data, error } = await supabase
+      .from('employees')
+      .update({ supervisor_id: supervisorId })
+      .eq('id', employeeId)
+      .select()
+      .single();
+
+    if (error) throw error;
+    return { data, error: null };
+  } catch (error) {
+    return { data: null, error };
+  }
+};
+
+// Get employees with supervisor information
+export const getEmployeesWithSupervisors = async () => {
+  try {
+    const { data, error } = await supabase
+      .from('employees_with_supervisors')
+      .select('*')
+      .order('name');
+
+    if (error) throw error;
+    return { data, error: null };
+  } catch (error) {
+    return { data: null, error };
+  }
 }; 

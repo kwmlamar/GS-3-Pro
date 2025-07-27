@@ -23,6 +23,7 @@ import AdminSettings from '@/pages/AdminSettings';
 import HealthSafety from '@/pages/HealthSafety';
 import DeveloperPage from '@/pages/DeveloperPage';
 import Archive from '@/pages/Archive';
+import ChainOfCommand from '@/pages/ChainOfCommand';
 import { supabase } from '@/lib/supabaseClient';
 import { useToast } from '@/components/ui/use-toast';
 
@@ -135,6 +136,7 @@ function App() {
               <Route path="assessments" element={<Assessments />} />
               <Route path="sites" element={<Sites />} />
               <Route path="employees" element={<Employees />} />
+              <Route path="chain-of-command" element={<ChainOfCommand />} />
               <Route path="entity-staff" element={<EntityStaff />} />
               <Route path="performance" element={<PerformancePage />} />
               <Route path="subcontractors" element={<Subcontractors />} />

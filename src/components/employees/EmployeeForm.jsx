@@ -9,7 +9,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/components/ui/use-toast';
 import { X, Save, UserPlus, Edit, Shield, AlertTriangle, Building2, MapPin, Crown, Users, Star, Briefcase, GraduationCap } from 'lucide-react';
-import { createEmployee, updateEmployee, EMPLOYEE_TYPES, getDepartments, createDepartment } from '@/lib/employeeService';
+import { createEmployee, updateEmployee, EMPLOYEE_TYPES, getDepartments, createDepartment, getPotentialSupervisors } from '@/lib/employeeService';
 import { supabase } from '@/lib/supabaseClient';
 
 const EmployeeForm = ({ employee = null, onClose, onSuccess, staffType = 'security' }) => {
@@ -25,7 +25,8 @@ const EmployeeForm = ({ employee = null, onClose, onSuccess, staffType = 'securi
     email: '',
     phone: '',
     hire_date: new Date().toISOString().split('T')[0],
-    notes: ''
+    notes: '',
+    supervisor_id: null
   });
   const [loading, setLoading] = useState(false);
   const [sites, setSites] = useState([]);
@@ -35,6 +36,8 @@ const EmployeeForm = ({ employee = null, onClose, onSuccess, staffType = 'securi
   const [showNewDepartmentInput, setShowNewDepartmentInput] = useState(false);
   const [newDepartment, setNewDepartment] = useState('');
   const [showEntityDropdown, setShowEntityDropdown] = useState(false);
+  const [supervisors, setSupervisors] = useState([]);
+  const [supervisorsLoading, setSupervisorsLoading] = useState(false);
   const { toast } = useToast();
 
   const isEditing = !!employee;
@@ -96,10 +99,25 @@ const EmployeeForm = ({ employee = null, onClose, onSuccess, staffType = 'securi
     }
   }, [toast]);
 
+  // Fetch supervisors for the dropdown
+  const fetchSupervisors = useCallback(async () => {
+    setSupervisorsLoading(true);
+    try {
+      const { data, error } = await getPotentialSupervisors(employee?.id);
+      if (error) throw error;
+      setSupervisors(data || []);
+    } catch (error) {
+      toast({ variant: 'destructive', title: 'Error fetching supervisors', description: error.message });
+    } finally {
+      setSupervisorsLoading(false);
+    }
+  }, [toast, employee?.id]);
+
   useEffect(() => {
     fetchSites();
     fetchDepartments();
-  }, [fetchSites, fetchDepartments]);
+    fetchSupervisors();
+  }, [fetchSites, fetchDepartments, fetchSupervisors]);
 
   useEffect(() => {
     if (employee) {
@@ -117,7 +135,8 @@ const EmployeeForm = ({ employee = null, onClose, onSuccess, staffType = 'securi
         email: employee.email || '',
         phone: employee.phone || '',
         hire_date: employee.hire_date || new Date().toISOString().split('T')[0],
-        notes: employee.notes || ''
+        notes: employee.notes || '',
+        supervisor_id: employee.supervisor_id || null
       });
     }
   }, [employee]);
@@ -363,6 +382,48 @@ const EmployeeForm = ({ employee = null, onClose, onSuccess, staffType = 'securi
                         </SelectContent>
                       </Select>
                     )}
+                  </div>
+
+                  {/* Supervisor */}
+                  <div className="space-y-2">
+                    <Label htmlFor="supervisor" className="text-white">Supervisor</Label>
+                                        <Select
+                      value={formData.supervisor_id || ''}
+                      onValueChange={(value) => handleInputChange('supervisor_id', value === '' ? null : value)}
+                    >
+                      <SelectTrigger className="bg-slate-700/50 border-slate-600 text-white">
+                        {formData.supervisor_id && !supervisorsLoading ? (
+                          <div className="flex items-center justify-between w-full">
+                            <span className="text-white">
+                              {(() => {
+                                // Convert both to strings for comparison to handle type mismatches
+                                const selectedSupervisor = supervisors.find(s => String(s.id) === String(formData.supervisor_id));
+                                console.log('Supervisor lookup:', {
+                                  supervisorId: formData.supervisor_id,
+                                  supervisors: supervisors.map(s => ({ id: s.id, name: s.name })),
+                                  found: selectedSupervisor
+                                });
+                                return selectedSupervisor ? `${selectedSupervisor.name} (${selectedSupervisor.role})` : 'Loading...';
+                              })()}
+                            </span>
+                            <svg className="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                            </svg>
+                          </div>
+                        ) : (
+                          <SelectValue placeholder={supervisorsLoading ? "Loading supervisors..." : "Select supervisor (optional)"} />
+                        )}
+                      </SelectTrigger>
+                      <SelectContent className="bg-slate-800 border-slate-600">
+                        <SelectItem value="" className="text-white">No Supervisor</SelectItem>
+                        {supervisors.map((supervisor) => (
+                          <SelectItem key={supervisor.id} value={supervisor.id} className="text-white">
+                            {supervisor.name} ({supervisor.role}) - {supervisor.type}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <p className="text-xs text-gray-400">Select the employee this person reports to</p>
                   </div>
 
                   <div className="space-y-2">
