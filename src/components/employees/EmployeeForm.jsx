@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
+import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/components/ui/use-toast';
 import { X, Save, UserPlus, Edit, Shield, AlertTriangle, Building2, MapPin, Crown, Users, Star, Briefcase, GraduationCap } from 'lucide-react';
 import { createEmployee, updateEmployee, EMPLOYEE_TYPES, getDepartments, createDepartment } from '@/lib/employeeService';
@@ -16,7 +17,7 @@ const EmployeeForm = ({ employee = null, onClose, onSuccess, staffType = 'securi
     name: '',
     role: '',
     type: '',
-    site: '',
+    entities: [],
     department: '',
     status: 'Active',
     compliance: 100,
@@ -33,6 +34,7 @@ const EmployeeForm = ({ employee = null, onClose, onSuccess, staffType = 'securi
   const [departmentsLoading, setDepartmentsLoading] = useState(false);
   const [showNewDepartmentInput, setShowNewDepartmentInput] = useState(false);
   const [newDepartment, setNewDepartment] = useState('');
+  const [showEntityDropdown, setShowEntityDropdown] = useState(false);
   const { toast } = useToast();
 
   const isEditing = !!employee;
@@ -105,7 +107,7 @@ const EmployeeForm = ({ employee = null, onClose, onSuccess, staffType = 'securi
         name: employee.name || '',
         role: employee.role || '',
         type: employee.type || '',
-        site: employee.site || '',
+        entities: employee.entities?.map(e => e.site_id) || [],
         department: employee.departments?.name || '', // Use the department name from the joined data
         status: employee.status || 'Active',
         compliance: employee.compliance || 100,
@@ -120,12 +122,28 @@ const EmployeeForm = ({ employee = null, onClose, onSuccess, staffType = 'securi
     }
   }, [employee]);
 
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (showEntityDropdown && !event.target.closest('.entity-dropdown')) {
+        setShowEntityDropdown(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [showEntityDropdown]);
+
   const handleInputChange = (field, value) => {
     setFormData(prev => ({
       ...prev,
       [field]: value
     }));
   };
+
+
 
   const handleDepartmentChange = (value) => {
     if (value === 'add_new') {
@@ -364,23 +382,95 @@ const EmployeeForm = ({ employee = null, onClose, onSuccess, staffType = 'securi
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="site" className="text-white">Entity</Label>
-                    <Select 
-                      value={formData.site} 
-                      onValueChange={(value) => handleInputChange('site', value)}
-                      disabled={sitesLoading}
-                    >
-                      <SelectTrigger className="bg-slate-700/50 border-slate-600 text-white">
-                        <SelectValue placeholder={sitesLoading ? "Loading entities..." : "Select an entity..."} />
-                      </SelectTrigger>
-                      <SelectContent className="bg-slate-800 border-slate-600">
-                        {sites.map((site) => (
-                          <SelectItem key={site.id} value={site.name} className="text-white">
-                            {site.name} ({site.type}) {site.parent_name ? `- ${site.parent_name}` : ''}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    <Label className="text-white">Entities</Label>
+                    <div className="relative entity-dropdown">
+                      <div
+                        onClick={() => setShowEntityDropdown(!showEntityDropdown)}
+                        className="flex items-center justify-between w-full p-3 bg-slate-700/50 border border-slate-600 rounded-lg cursor-pointer hover:bg-slate-700/70"
+                      >
+                        <div className="flex flex-wrap gap-1">
+                          {formData.entities.length > 0 ? (
+                            formData.entities.map((entityId) => {
+                              const site = sites.find(s => s.id === entityId);
+                              return site ? (
+                                <span key={entityId} className="inline-flex items-center px-2 py-1 bg-blue-600/20 text-blue-300 text-xs rounded border border-blue-500/30">
+                                  {site.name}
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      setFormData(prev => ({
+                                        ...prev,
+                                        entities: prev.entities.filter(id => id !== entityId)
+                                      }));
+                                    }}
+                                    className="ml-1 text-blue-400 hover:text-blue-300"
+                                  >
+                                    ×
+                                  </button>
+                                </span>
+                              ) : null;
+                            })
+                          ) : (
+                            <span className="text-slate-400">Select entities...</span>
+                          )}
+                        </div>
+                        <svg className="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                        </svg>
+                      </div>
+                      
+                      {showEntityDropdown && (
+                        <div className="absolute z-50 w-full mt-1 bg-slate-800 border border-slate-600 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+                          {sites.map((site) => (
+                            <div
+                              key={site.id}
+                              onClick={() => {
+                                if (formData.entities.includes(site.id)) {
+                                  setFormData(prev => ({
+                                    ...prev,
+                                    entities: prev.entities.filter(id => id !== site.id)
+                                  }));
+                                } else {
+                                  setFormData(prev => ({
+                                    ...prev,
+                                    entities: [...prev.entities, site.id]
+                                  }));
+                                }
+                              }}
+                              className={`flex items-center justify-between p-3 cursor-pointer hover:bg-slate-700/50 ${
+                                formData.entities.includes(site.id) ? 'bg-blue-600/20' : ''
+                              }`}
+                            >
+                              <div className="flex-1">
+                                <div className="text-white text-sm">
+                                  {site.name} ({site.type})
+                                </div>
+                                {site.parent_name && (
+                                  <div className="text-slate-400 text-xs">
+                                    Parent: {site.parent_name}
+                                  </div>
+                                )}
+                              </div>
+                              {formData.entities.includes(site.id) && (
+                                <svg className="w-4 h-4 text-blue-400" fill="currentColor" viewBox="0 0 20 20">
+                                  <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                                </svg>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                    {formData.entities.length > 0 && (
+                      <div className="text-xs text-slate-400">
+                        Selected: {formData.entities.length} entity{formData.entities.length !== 1 ? 's' : ''}
+                        {formData.entities.length > 1 && (
+                          <span className="ml-2 text-blue-400">
+                            (First selected will be primary)
+                          </span>
+                        )}
+                      </div>
+                    )}
                   </div>
 
                   <div className="space-y-2">

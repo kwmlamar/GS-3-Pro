@@ -279,7 +279,14 @@ const Employees = () => {
                           <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-gray-400">
                             <span>{employee.role}</span>
                             <span>•</span>
-                            <span>{employee.site}</span>
+                            <span>
+                              {employee.primaryEntity || employee.site || 'No entity assigned'}
+                              {employee.entities && employee.entities.length > 1 && (
+                                <span className="text-xs text-slate-500 ml-1">
+                                  (+{employee.entities.length - 1} more)
+                                </span>
+                              )}
+                            </span>
                             <span>•</span>
                             <span>{Array.isArray(employee.certifications) ? employee.certifications.length : 0} Certs</span>
                           </div>

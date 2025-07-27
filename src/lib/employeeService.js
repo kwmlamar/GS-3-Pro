@@ -84,8 +84,8 @@ export const createEmployee = async (employeeData) => {
       }
     }
 
-    // Remove the department name field as we now use department_id
-    const { department, ...dataToSave } = finalEmployeeData;
+    // Handle entities - extract entity IDs and remove from employee data
+    const { department, entities, ...dataToSave } = finalEmployeeData;
 
     const { data, error } = await supabase
       .from('employees')
@@ -97,6 +97,25 @@ export const createEmployee = async (employeeData) => {
       .single();
 
     if (error) throw error;
+
+    // If entities are provided, create employee-entity relationships
+    if (entities && entities.length > 0) {
+      const employeeEntities = entities.map((entityId, index) => ({
+        employee_id: data.id,
+        site_id: entityId,
+        is_primary: index === 0 // First entity is primary
+      }));
+
+      const { error: entityError } = await supabase
+        .from('employee_entities')
+        .insert(employeeEntities);
+
+      if (entityError) {
+        console.error('Error creating employee-entity relationships:', entityError);
+        // Don't fail the entire operation, just log the error
+      }
+    }
+
     return { data, error: null };
   } catch (error) {
     console.error('Error creating employee:', error);
@@ -128,9 +147,30 @@ export const getEmployees = async () => {
       }
       throw error;
     }
-    return { data, error: null };
+
+    // Fetch employee entities for each employee
+    const employeesWithEntities = await Promise.all(
+      data.map(async (employee) => {
+        const { data: entities } = await supabase
+          .from('employee_entities')
+          .select(`
+            site_id,
+            is_primary,
+            sites (id, name, type, parent_id)
+          `)
+          .eq('employee_id', employee.id);
+
+        return {
+          ...employee,
+          entities: entities || [],
+          primaryEntity: entities?.find(e => e.is_primary)?.sites?.name || employee.site || 'No entity assigned'
+        };
+      })
+    );
+
+    return { data: employeesWithEntities, error: null };
   } catch (error) {
-          console.error('Error fetching security staff:', error);
+    console.error('Error fetching security staff:', error);
     return { data: null, error };
   }
 };
@@ -185,8 +225,8 @@ export const updateEmployee = async (id, updates) => {
       }
     }
 
-    // Remove the department name field as we now use department_id
-    const { department, ...dataToSave } = finalUpdates;
+    // Handle entities - extract entity IDs and remove from employee data
+    const { department, entities, ...dataToSave } = finalUpdates;
 
     const { data, error } = await supabase
       .from('employees')
@@ -199,6 +239,34 @@ export const updateEmployee = async (id, updates) => {
       .single();
 
     if (error) throw error;
+
+    // If entities are provided, update employee-entity relationships
+    if (entities !== undefined) {
+      // Delete existing relationships
+      await supabase
+        .from('employee_entities')
+        .delete()
+        .eq('employee_id', id);
+
+      // Create new relationships if entities are provided
+      if (entities && entities.length > 0) {
+        const employeeEntities = entities.map((entityId, index) => ({
+          employee_id: id,
+          site_id: entityId,
+          is_primary: index === 0 // First entity is primary
+        }));
+
+        const { error: entityError } = await supabase
+          .from('employee_entities')
+          .insert(employeeEntities);
+
+        if (entityError) {
+          console.error('Error updating employee-entity relationships:', entityError);
+          // Don't fail the entire operation, just log the error
+        }
+      }
+    }
+
     return { data, error: null };
   } catch (error) {
     console.error('Error updating employee:', error);
