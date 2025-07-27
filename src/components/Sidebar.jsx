@@ -2,7 +2,7 @@ import React from 'react';
 import { NavLink, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { 
-  LayoutDashboard, ShieldCheck, Users, Briefcase, GraduationCap, BookOpen, Nfc, BarChart2, MessageSquare, FileText, Settings, HardHat, ShieldAlert, X, CalendarDays, UserCheck, FileArchive, AlertTriangle, RadioTower, GitBranch, LockKeyhole, Network, Code
+  LayoutDashboard, ShieldCheck, Users, Briefcase, GraduationCap, BookOpen, Nfc, BarChart2, MessageSquare, FileText, Settings, HardHat, ShieldAlert, X, CalendarDays, UserCheck, FileArchive, AlertTriangle, RadioTower, GitBranch, LockKeyhole, Network, Code, Building2
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -16,19 +16,20 @@ const supervisorAndAbove = ['admin', 'supervisor', 'operations_manager'];
 
 const navItems = [
   { icon: LayoutDashboard, label: 'Dashboard', path: '/', roles: allRoles },
-  { icon: ShieldCheck, label: 'Assessments', path: '/assessments', roles: supervisorAndAbove },
   { icon: Network, label: 'Hierarchy Builder', path: '/sites', roles: [...commonRoles, ...executiveRoles] }, 
-  { icon: Users, label: 'Security Staff', path: '/employees', roles: supervisorAndAbove },
-  { icon: UserCheck, label: 'Performance', path: '/performance', roles: supervisorAndAbove },
+  { icon: FileText, label: 'Reports Hub', path: '/reports', roles: allRoles },
+  { icon: Nfc, label: 'NFC/GPS Tags', path: '/nfc', roles: [...supervisorAndAbove, 'hybrid_employee'] },
+  { icon: CalendarDays, label: 'Scheduling', path: '/scheduling', roles: supervisorAndAbove },
+  { icon: ShieldCheck, label: 'Assessments', path: '/assessments', roles: supervisorAndAbove },
   { icon: Briefcase, label: 'Subcontractors', path: '/subcontractors', roles: operationsAndAdmin },
+  { icon: Users, label: 'Security Staff', path: '/employees', roles: supervisorAndAbove },
+  { icon: Building2, label: 'Entity Staff', path: '/entity-staff', roles: supervisorAndAbove },
+  { icon: UserCheck, label: 'Performance', path: '/performance', roles: supervisorAndAbove },
   { icon: ShieldAlert, label: 'Health & Safety', path: '/health-safety', roles: [...commonRoles, ...executiveRoles] },
   { icon: GraduationCap, label: 'Training', path: '/training', roles: [...commonRoles, ...clientRoles] },
   { icon: BookOpen, label: 'Live Classes', path: '/live-classes', roles: [...commonRoles, ...clientRoles] },
-  { icon: Nfc, label: 'NFC/GPS Tags', path: '/nfc', roles: [...supervisorAndAbove, 'hybrid_employee'] },
-  { icon: FileText, label: 'Reports Hub', path: '/reports', roles: allRoles },
   { icon: AlertTriangle, label: 'Incidents', path: '/reports/incidents', roles: allRoles },
   { icon: FileArchive, label: 'Observations', path: '/reports/observations', roles: allRoles },
-  { icon: CalendarDays, label: 'Scheduling', path: '/scheduling', roles: supervisorAndAbove },
   { icon: BarChart2, label: 'Analytics', path: '/analytics', roles: [...operationsAndAdmin, ...executiveRoles] },
   { icon: RadioTower, label: 'Communications', path: '/messaging', roles: allRoles },
   { icon: HardHat, label: 'ISO Compliance', path: '/iso', roles: [...operationsAndAdmin, 'consultant'] },

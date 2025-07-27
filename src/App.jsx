@@ -7,6 +7,7 @@ import Dashboard from '@/pages/Dashboard';
 import Assessments from '@/pages/Assessments';
 import Sites from '@/pages/Sites';
 import Employees from '@/pages/Employees';
+import EntityStaff from '@/pages/EntityStaff';
 import Subcontractors from '@/pages/Subcontractors';
 import Training from '@/pages/Training';
 import LiveClasses from '@/pages/LiveClasses';
@@ -133,6 +134,7 @@ function App() {
               <Route path="assessments" element={<Assessments />} />
               <Route path="sites" element={<Sites />} />
               <Route path="employees" element={<Employees />} />
+              <Route path="entity-staff" element={<EntityStaff />} />
               <Route path="performance" element={<PerformancePage />} />
               <Route path="subcontractors" element={<Subcontractors />} />
               <Route path="training" element={<Training />} />
