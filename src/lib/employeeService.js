@@ -2,6 +2,31 @@ import { supabase } from './supabaseClient';
 
 // Employee types and their requirements
 export const EMPLOYEE_TYPES = {
+  'Employee': {
+    description: 'General employee with basic responsibilities',
+    requirements: ['Basic Training', 'Background Check', 'Company Policies'],
+    icon: 'Shield'
+  },
+  'Site EHS Representative': {
+    description: 'Environmental, Health & Safety representative for specific sites',
+    requirements: ['EHS Certification', 'Safety Training', 'Incident Response', 'Regulatory Knowledge'],
+    icon: 'AlertTriangle'
+  },
+  'Site Manager': {
+    description: 'Manager responsible for day-to-day operations at specific sites',
+    requirements: ['Management Experience', 'Leadership Training', 'Site-Specific Knowledge', 'Team Management'],
+    icon: 'Building2'
+  },
+  'Regional Manager': {
+    description: 'Manager overseeing multiple sites within a region',
+    requirements: ['Regional Management Experience', 'Strategic Planning', 'Multi-Site Coordination', 'Advanced Leadership'],
+    icon: 'MapPin'
+  },
+  'Executive': {
+    description: 'Senior executive with strategic and organizational responsibilities',
+    requirements: ['Executive Experience', 'Strategic Vision', 'Organizational Leadership', 'Industry Expertise'],
+    icon: 'Crown'
+  },
   'Standard Officer': {
     description: 'Basic security personnel for routine operations',
     requirements: ['Basic Security Training', 'Background Check', 'Physical Fitness'],
@@ -32,10 +57,43 @@ export const EMPLOYEE_TYPES = {
 // Create employee
 export const createEmployee = async (employeeData) => {
   try {
+    // Handle department - if department name is provided, find or create the department
+    let finalEmployeeData = { ...employeeData };
+    
+    if (employeeData.department && !employeeData.department_id) {
+      // Try to find existing department
+      const { data: existingDept } = await supabase
+        .from('departments')
+        .select('id')
+        .eq('name', employeeData.department)
+        .eq('is_active', true)
+        .single();
+
+      if (existingDept) {
+        finalEmployeeData.department_id = existingDept.id;
+      } else {
+        // Create new department
+        const { data: newDept, error: deptError } = await createDepartment({
+          name: employeeData.department,
+          description: `Department for ${employeeData.department}`,
+          is_active: true
+        });
+
+        if (deptError) throw deptError;
+        finalEmployeeData.department_id = newDept.id;
+      }
+    }
+
+    // Remove the department name field as we now use department_id
+    const { department, ...dataToSave } = finalEmployeeData;
+
     const { data, error } = await supabase
       .from('employees')
-      .insert([employeeData])
-      .select()
+      .insert([dataToSave])
+      .select(`
+        *,
+        departments (id, name, description)
+      `)
       .single();
 
     if (error) throw error;
@@ -51,7 +109,10 @@ export const getEmployees = async () => {
   try {
     const { data, error } = await supabase
       .from('employees')
-      .select('*')
+      .select(`
+        *,
+        departments (id, name, description)
+      `)
       .order('created_at', { ascending: false });
 
     if (error) {
@@ -79,7 +140,10 @@ export const getEmployeeById = async (id) => {
   try {
     const { data, error } = await supabase
       .from('employees')
-      .select('*')
+      .select(`
+        *,
+        departments (id, name, description)
+      `)
       .eq('id', id)
       .single();
 
@@ -94,11 +158,44 @@ export const getEmployeeById = async (id) => {
 // Update employee
 export const updateEmployee = async (id, updates) => {
   try {
+    // Handle department - if department name is provided, find or create the department
+    let finalUpdates = { ...updates };
+    
+    if (updates.department && !updates.department_id) {
+      // Try to find existing department
+      const { data: existingDept } = await supabase
+        .from('departments')
+        .select('id')
+        .eq('name', updates.department)
+        .eq('is_active', true)
+        .single();
+
+      if (existingDept) {
+        finalUpdates.department_id = existingDept.id;
+      } else {
+        // Create new department
+        const { data: newDept, error: deptError } = await createDepartment({
+          name: updates.department,
+          description: `Department for ${updates.department}`,
+          is_active: true
+        });
+
+        if (deptError) throw deptError;
+        finalUpdates.department_id = newDept.id;
+      }
+    }
+
+    // Remove the department name field as we now use department_id
+    const { department, ...dataToSave } = finalUpdates;
+
     const { data, error } = await supabase
       .from('employees')
-      .update(updates)
+      .update(dataToSave)
       .eq('id', id)
-      .select()
+      .select(`
+        *,
+        departments (id, name, description)
+      `)
       .single();
 
     if (error) throw error;

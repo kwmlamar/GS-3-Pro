@@ -7,7 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/components/ui/use-toast';
-import { X, Save, UserPlus, Edit } from 'lucide-react';
+import { X, Save, UserPlus, Edit, Shield, AlertTriangle, Building2, MapPin, Crown, Users, Star, Briefcase, GraduationCap } from 'lucide-react';
 import { createEmployee, updateEmployee, EMPLOYEE_TYPES, getDepartments, createDepartment } from '@/lib/employeeService';
 import { supabase } from '@/lib/supabaseClient';
 
@@ -105,7 +105,7 @@ const EmployeeForm = ({ employee = null, onClose, onSuccess, staffType = 'securi
         role: employee.role || '',
         type: employee.type || '',
         site: employee.site || '',
-        department: employee.department || '',
+        department: employee.departments?.name || '', // Use the department name from the joined data
         status: employee.status || 'Active',
         compliance: employee.compliance || 100,
         certifications: Array.isArray(employee.certifications) 
