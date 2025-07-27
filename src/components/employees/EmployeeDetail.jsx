@@ -225,6 +225,23 @@ const EmployeeDetail = ({ employee, onClose, onUpdate, staffType = 'security' })
                 </Card>
               )}
 
+              {/* Notes & Comments */}
+              {employee.notes && (
+                <Card className="ios-card">
+                  <CardHeader>
+                    <CardTitle className="text-white text-lg flex items-center space-x-2">
+                      <User className="w-5 h-5 text-blue-400" />
+                      <span>Notes & Comments</span>
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="p-4 rounded-lg bg-slate-700/50 border border-slate-600">
+                      <p className="text-white whitespace-pre-wrap">{employee.notes}</p>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+
               {/* Quick Actions */}
               <Card className="ios-card">
                 <CardHeader>

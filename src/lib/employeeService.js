@@ -311,7 +311,8 @@ export const initializeEmployeeData = async () => {
       certifications: ['Basic Security', 'First Aid', 'Firearms'],
       email: 'john.smith@gs3.com',
       phone: '+1-555-0123',
-      hire_date: '2023-01-15'
+      hire_date: '2023-01-15',
+      notes: 'Reliable officer with excellent customer service skills. Handles high-traffic areas well.'
     },
     {
       name: 'Sarah Johnson',
@@ -323,7 +324,8 @@ export const initializeEmployeeData = async () => {
       certifications: ['Advanced Security', 'Leadership', 'Emergency Response'],
       email: 'sarah.johnson@gs3.com',
       phone: '+1-555-0124',
-      hire_date: '2022-08-20'
+      hire_date: '2022-08-20',
+      notes: 'Strong leadership qualities. Excellent at managing team dynamics and emergency situations.'
     },
     {
       name: 'Mike Rodriguez',
@@ -335,7 +337,8 @@ export const initializeEmployeeData = async () => {
       certifications: ['Management', 'Risk Assessment', 'ISO 18788'],
       email: 'mike.rodriguez@gs3.com',
       phone: '+1-555-0125',
-      hire_date: '2021-03-10'
+      hire_date: '2021-03-10',
+      notes: 'Strategic thinker with proven track record in operational efficiency. Key player in regional expansion.'
     },
     {
       name: 'Lisa Chen',
@@ -347,7 +350,8 @@ export const initializeEmployeeData = async () => {
       certifications: ['Consulting', 'Risk Analysis', 'Training'],
       email: 'lisa.chen@gs3.com',
       phone: '+1-555-0126',
-      hire_date: '2022-11-05'
+      hire_date: '2022-11-05',
+      notes: 'Expert in risk assessment and training. Valuable asset for client consultations and specialized projects.'
     }
   ];
 

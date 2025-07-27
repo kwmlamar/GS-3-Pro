@@ -23,7 +23,8 @@ const EmployeeForm = ({ employee = null, onClose, onSuccess, staffType = 'securi
     certifications: '',
     email: '',
     phone: '',
-    hire_date: new Date().toISOString().split('T')[0]
+    hire_date: new Date().toISOString().split('T')[0],
+    notes: ''
   });
   const [loading, setLoading] = useState(false);
   const [sites, setSites] = useState([]);
@@ -113,7 +114,8 @@ const EmployeeForm = ({ employee = null, onClose, onSuccess, staffType = 'securi
           : employee.certifications || '',
         email: employee.email || '',
         phone: employee.phone || '',
-        hire_date: employee.hire_date || new Date().toISOString().split('T')[0]
+        hire_date: employee.hire_date || new Date().toISOString().split('T')[0],
+        notes: employee.notes || ''
       });
     }
   }, [employee]);
@@ -455,6 +457,18 @@ const EmployeeForm = ({ employee = null, onClose, onSuccess, staffType = 'securi
                     className="bg-slate-700/50 border-slate-600 text-white min-h-[80px]"
                   />
                   <p className="text-xs text-gray-400">Enter certifications separated by commas</p>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="notes" className="text-white">Notes & Comments</Label>
+                  <Textarea
+                    id="notes"
+                    value={formData.notes}
+                    onChange={(e) => handleInputChange('notes', e.target.value)}
+                    placeholder="Add any notes, comments, or observations about this employee..."
+                    className="bg-slate-700/50 border-slate-600 text-white min-h-[100px]"
+                  />
+                  <p className="text-xs text-gray-400">Optional notes for internal reference</p>
                 </div>
 
                 <div className="flex justify-end space-x-3 pt-4">
