@@ -21,7 +21,7 @@ import {
 } from 'lucide-react';
 import EmployeeForm from './EmployeeForm';
 
-const EmployeeDetail = ({ employee, onClose, onUpdate }) => {
+const EmployeeDetail = ({ employee, onClose, onUpdate, staffType = 'security' }) => {
   const [showEditForm, setShowEditForm] = useState(false);
   const { toast } = useToast();
 
@@ -63,6 +63,7 @@ const EmployeeDetail = ({ employee, onClose, onUpdate }) => {
         employee={employee}
         onClose={() => setShowEditForm(false)}
         onSuccess={handleUpdate}
+        staffType={staffType}
       />
     );
   }

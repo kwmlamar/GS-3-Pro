@@ -11,7 +11,7 @@ import { X, Save, UserPlus, Edit } from 'lucide-react';
 import { createEmployee, updateEmployee, EMPLOYEE_TYPES } from '@/lib/employeeService';
 import { supabase } from '@/lib/supabaseClient';
 
-const EmployeeForm = ({ employee = null, onClose, onSuccess }) => {
+const EmployeeForm = ({ employee = null, onClose, onSuccess, staffType = 'security' }) => {
   const [formData, setFormData] = useState({
     name: '',
     role: '',
@@ -130,8 +130,9 @@ const EmployeeForm = ({ employee = null, onClose, onSuccess }) => {
         throw result.error;
       }
 
+      const staffLabel = staffType === 'entity' ? 'Entity Staff' : 'Security Staff';
       toast({
-        title: isEditing ? "Security Staff Updated" : "Security Staff Added",
+        title: isEditing ? `${staffLabel} Updated` : `${staffLabel} Added`,
         description: `${formData.name} has been ${isEditing ? 'updated' : 'added'} successfully.`,
         variant: "default"
       });
@@ -140,9 +141,10 @@ const EmployeeForm = ({ employee = null, onClose, onSuccess }) => {
       onClose();
     } catch (error) {
       console.error('Error saving employee:', error);
+      const staffLabel = staffType === 'entity' ? 'Entity Staff' : 'Security Staff';
       toast({
         title: "Error",
-        description: error.message || "Failed to save security staff. Please try again.",
+        description: error.message || `Failed to save ${staffLabel.toLowerCase()}. Please try again.`,
         variant: "destructive"
       });
     } finally {
@@ -172,7 +174,7 @@ const EmployeeForm = ({ employee = null, onClose, onSuccess }) => {
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
               <CardTitle className="flex items-center space-x-2 text-white">
                 {isEditing ? <Edit className="w-5 h-5 text-blue-400" /> : <UserPlus className="w-5 h-5 text-green-400" />}
-                <span>{isEditing ? 'Edit Security Staff' : 'Add New Security Staff'}</span>
+                <span>{isEditing ? `Edit ${staffType === 'entity' ? 'Entity Staff' : 'Security Staff'}` : `Add New ${staffType === 'entity' ? 'Entity Staff' : 'Security Staff'}`}</span>
               </CardTitle>
               <Button
                 variant="ghost"
@@ -222,10 +224,10 @@ const EmployeeForm = ({ employee = null, onClose, onSuccess }) => {
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="type" className="text-white">Security Staff Type</Label>
+                    <Label htmlFor="type" className="text-white">{staffType === 'entity' ? 'Entity Staff' : 'Security Staff'} Type</Label>
                     <Select value={formData.type} onValueChange={(value) => handleInputChange('type', value)}>
                       <SelectTrigger className="bg-slate-700/50 border-slate-600 text-white">
-                        <SelectValue placeholder="Select security staff type" />
+                        <SelectValue placeholder={`Select ${staffType === 'entity' ? 'entity staff' : 'security staff'} type`} />
                       </SelectTrigger>
                       <SelectContent className="bg-slate-800 border-slate-600">
                         {employeeTypeOptions.map((type) => (
@@ -355,7 +357,7 @@ const EmployeeForm = ({ employee = null, onClose, onSuccess }) => {
                     ) : (
                       <div className="flex items-center space-x-2">
                         <Save className="w-4 h-4" />
-                        <span>{isEditing ? 'Update' : 'Save'} Security Staff</span>
+                        <span>{isEditing ? 'Update' : 'Save'} {staffType === 'entity' ? 'Entity Staff' : 'Security Staff'}</span>
                       </div>
                     )}
                   </Button>

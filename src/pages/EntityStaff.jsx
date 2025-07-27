@@ -470,6 +470,7 @@ const Employees = () => {
         <EmployeeForm
           onClose={() => setShowAddForm(false)}
           onSuccess={handleEmployeeCreated}
+          staffType="entity"
         />
       )}
 
@@ -479,6 +480,7 @@ const Employees = () => {
           employee={selectedEmployee}
           onClose={() => setSelectedEmployee(null)}
           onUpdate={handleEmployeeUpdate}
+          staffType="entity"
         />
       )}
     </div>
