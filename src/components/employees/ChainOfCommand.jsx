@@ -24,9 +24,9 @@ import {
   getOrganizationalChart, 
   getDirectReports, 
   getSupervisorChain,
-  getEmployeesWithSupervisors,
-  updateEmployeeSupervisor 
-} from '@/lib/employeeService';
+  getEntityStaffWithSupervisors,
+  updateEntityStaffSupervisor 
+} from '@/lib/entityStaffService';
 
 const ChainOfCommand = () => {
   const [orgChart, setOrgChart] = useState([]);
@@ -47,7 +47,7 @@ const ChainOfCommand = () => {
     try {
       const [orgChartData, employeesData] = await Promise.all([
         getOrganizationalChart(),
-        getEmployeesWithSupervisors()
+        getEntityStaffWithSupervisors()
       ]);
 
       if (orgChartData.error) throw orgChartData.error;

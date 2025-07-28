@@ -112,13 +112,13 @@ const Subcontractors = () => {
         <div>
           <h1 className="text-3xl font-bold text-white flex items-center">
             <Briefcase className="w-8 h-8 mr-3 text-blue-400" />
-            Subcontractor Management
+            Security Companies Management
           </h1>
           <p className="text-gray-400 mt-1">Oversee and manage third-party security service providers.</p>
         </div>
         <Button onClick={handleAddSubcontractor} className="ios-button bg-blue-600 hover:bg-blue-700 mt-4 sm:mt-0">
           <Plus className="w-4 h-4 mr-2" />
-          Add Subcontractor
+          Add Security Company
         </Button>
       </motion.div>
 
@@ -136,7 +136,7 @@ const Subcontractors = () => {
               <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between">
                 <CardTitle className="flex items-center space-x-2 text-white">
                   <Briefcase className="w-5 h-5 text-blue-400" />
-                  <span>Subcontractor Companies</span>
+                  <span>Security Companies</span>
                 </CardTitle>
                  <div className="flex items-center space-x-2 mt-3 sm:mt-0">
                     <Button variant="outline" size="sm" className="glass-button text-xs">
@@ -145,7 +145,7 @@ const Subcontractors = () => {
                     <div className="relative">
                       <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
                       <Input
-                        placeholder="Search subcontractors..."
+                        placeholder="Search security companies..."
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
                         className="pl-10 w-full sm:w-64 bg-slate-700/50 border-slate-600 text-gray-200 focus:ring-blue-500 focus:border-blue-500 text-sm"
@@ -153,19 +153,19 @@ const Subcontractors = () => {
                     </div>
                   </div>
               </div>
-               <CardDescription className="text-gray-400 mt-1">Directory of all subcontracted security providers.</CardDescription>
+               <CardDescription className="text-gray-400 mt-1">Directory of all security company providers.</CardDescription>
             </CardHeader>
             <CardContent>
               {loading ? (
                  <div className="flex justify-center items-center h-40">
                    <Users className="w-8 h-8 text-blue-400 animate-spin" />
-                   <p className="ml-2 text-white">Loading subcontractors...</p>
+                   <p className="ml-2 text-white">Loading security companies...</p>
                  </div>
               ) : filteredSubcontractors.length === 0 ? (
                 <div className="text-center py-10">
                   <Briefcase className="w-12 h-12 text-gray-500 mx-auto mb-4 opacity-70" />
-                  <h3 className="text-xl font-semibold text-white">No Subcontractors Found</h3>
-                  <p className="text-gray-400">Try adjusting your search or add a new subcontractor.</p>
+                  <h3 className="text-xl font-semibold text-white">No Security Companies Found</h3>
+                  <p className="text-gray-400">Try adjusting your search or add a new security company.</p>
                 </div>
               ) : (
                 <div className="space-y-4">
@@ -264,15 +264,15 @@ const Subcontractors = () => {
             <CardHeader>
               <CardTitle className="flex items-center space-x-2 text-white">
                 <BarChart3 className="w-5 h-5 text-purple-400" />
-                <span>Subcontractor Performance Metrics</span>
+                <span>Security Company Performance Metrics</span>
               </CardTitle>
-              <CardDescription className="text-gray-400 mt-1">Track KPIs and operational effectiveness of subcontractors.</CardDescription>
+              <CardDescription className="text-gray-400 mt-1">Track KPIs and operational effectiveness of security companies.</CardDescription>
             </CardHeader>
             <CardContent>
               <div className="text-center py-12 min-h-[300px] flex flex-col items-center justify-center">
                 <BarChart3 className="w-16 h-16 text-gray-500 mx-auto mb-4 opacity-70" />
                 <h3 className="text-xl font-semibold text-white">Performance Data Coming Soon</h3>
-                <p className="text-gray-400">Detailed performance dashboards for each subcontractor will be available here.</p>
+                <p className="text-gray-400">Detailed performance dashboards for each security company will be available here.</p>
                  <Button className="mt-4 ios-button bg-purple-600 hover:bg-purple-700" onClick={() => toast({ title: "🚧 This feature isn't implemented yet—but don't worry! You can request it in your next prompt! 🚀" })}>
                   Request Performance Metrics
                 </Button>
@@ -302,13 +302,13 @@ const Subcontractors = () => {
                     <CheckCircle className="w-10 h-10 text-green-400 mx-auto mb-2" />
                     <h3 className="text-white font-semibold">Fully Vetted</h3>
                     <p className="text-3xl font-bold text-green-400 mt-1">{stats.byVettingStatus['Approved'] || 0}</p>
-                    <p className="text-xs text-gray-400">Subcontractors</p>
+                    <p className="text-xs text-gray-400">Security Companies</p>
                   </div>
                   <div className="p-6 rounded-lg bg-yellow-500/10 border border-yellow-500/30 text-center">
                     <AlertTriangle className="w-10 h-10 text-yellow-400 mx-auto mb-2" />
                     <h3 className="text-white font-semibold">Pending Review</h3>
                     <p className="text-3xl font-bold text-yellow-400 mt-1">{stats.byVettingStatus['In Progress'] || 0}</p>
-                    <p className="text-xs text-gray-400">Subcontractors</p>
+                    <p className="text-xs text-gray-400">Security Companies</p>
                   </div>
                   <div className="p-6 rounded-lg bg-blue-500/10 border border-blue-500/30 text-center">
                     <Star className="w-10 h-10 text-blue-400 mx-auto mb-2" />
@@ -336,7 +336,7 @@ const Subcontractors = () => {
             <CardHeader>
               <CardTitle className="flex items-center space-x-2 text-white">
                 <Users className="w-5 h-5 text-yellow-400" />
-                <span>Client & Subcontractor Data Access Control</span>
+                <span>Client & Security Company Data Access Control</span>
               </CardTitle>
               <CardDescription className="text-gray-400 mt-1">Define data visibility and sharing permissions.</CardDescription>
             </CardHeader>
@@ -344,7 +344,7 @@ const Subcontractors = () => {
               <div className="text-center py-12 min-h-[300px] flex flex-col items-center justify-center">
                 <Users className="w-16 h-16 text-gray-500 mx-auto mb-4 opacity-70" />
                 <h3 className="text-xl font-semibold text-white">Granular Data Access Configuration</h3>
-                <p className="text-gray-400 max-w-md mx-auto">Set specific rules for what data clients can see regarding subcontractor operations and performance. (Coming Soon)</p>
+                <p className="text-gray-400 max-w-md mx-auto">Set specific rules for what data clients can see regarding security company operations and performance. (Coming Soon)</p>
                 <Button className="mt-4 ios-button bg-yellow-600 hover:bg-yellow-700" onClick={() => toast({ title: "🚧 This feature isn't implemented yet—but don't worry! You can request it in your next prompt! 🚀" })}>
                   Configure Access Rules
                 </Button>

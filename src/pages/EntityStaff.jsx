@@ -21,14 +21,14 @@ import {
 import EmployeeForm from '@/components/employees/EmployeeForm';
 import EmployeeDetail from '@/components/employees/EmployeeDetail';
 import { 
-  getEmployees, 
-  searchEmployees, 
-  getEmployeeStats, 
-  initializeEmployeeData,
+  getEntityStaff, 
+  searchEntityStaff, 
+  getEntityStaffStats, 
+  initializeEntityStaffData,
   getBackgroundCheckStats,
   getOnboardingStats,
-  EMPLOYEE_TYPES 
-} from '@/lib/employeeService';
+  ENTITY_STAFF_TYPES 
+} from '@/lib/entityStaffService';
 import { testDatabaseConnection } from '@/lib/testConnection';
 
 const Employees = () => {
@@ -43,9 +43,9 @@ const Employees = () => {
   const [selectedEmployee, setSelectedEmployee] = useState(null);
   const { toast } = useToast();
 
-  // Load employees on component mount
+  // Load entity staff on component mount
   useEffect(() => {
-    loadEmployees();
+    loadEntityStaff();
     loadBackgroundStats();
     loadOnboardingStats();
   }, []);
@@ -64,26 +64,26 @@ const Employees = () => {
     }
   }, [searchTerm, employees]);
 
-  const loadEmployees = async () => {
+  const loadEntityStaff = async () => {
     setLoading(true);
     try {
-      const { data, error } = await getEmployees();
+      const { data, error } = await getEntityStaff();
       if (error) throw error;
       
       setEmployees(data || []);
       
-      // Initialize sample data if no employees exist
+      // Initialize sample data if no entity staff exist
       if (!data || data.length === 0) {
-        const { data: initData } = await initializeEmployeeData();
+        const { data: initData } = await initializeEntityStaffData();
         if (initData) {
           setEmployees(initData);
         }
       }
     } catch (error) {
-      console.error('Error loading employees:', error);
+      console.error('Error loading entity staff:', error);
       toast({
         title: "Error",
-        description: "Failed to load employees. Please try again.",
+        description: "Failed to load entity staff. Please try again.",
         variant: "destructive"
       });
     } finally {
@@ -93,7 +93,7 @@ const Employees = () => {
 
   const loadStats = async () => {
     try {
-      const { data, error } = await getEmployeeStats();
+      const { data, error } = await getEntityStaffStats();
       if (error) throw error;
       setStats(data);
     } catch (error) {
@@ -156,8 +156,8 @@ const Employees = () => {
     });
   };
 
-  // Generate employee types with real counts
-  const employeeTypes = Object.entries(EMPLOYEE_TYPES).map(([type, config]) => {
+  // Generate entity staff types with real counts
+  const entityStaffTypes = Object.entries(ENTITY_STAFF_TYPES).map(([type, config]) => {
     const count = employees.filter(emp => emp.type === type).length;
     return {
       type,
@@ -312,7 +312,7 @@ const Employees = () => {
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {employeeTypes.map((type, index) => (
+                {entityStaffTypes.map((type, index) => (
                   <motion.div
                     key={type.type}
                     initial={{ opacity: 0, scale: 0.9 }}

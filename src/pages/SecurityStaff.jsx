@@ -21,17 +21,17 @@ import {
 import EmployeeForm from '@/components/employees/EmployeeForm';
 import EmployeeDetail from '@/components/employees/EmployeeDetail';
 import { 
-  getEmployees, 
-  searchEmployees, 
-  getEmployeeStats, 
-  initializeEmployeeData,
+  getSecurityStaff, 
+  searchSecurityStaff, 
+  getSecurityStaffStats, 
+  initializeSecurityStaffData,
   getBackgroundCheckStats,
   getOnboardingStats,
-  EMPLOYEE_TYPES 
-} from '@/lib/employeeService';
+  SECURITY_STAFF_TYPES 
+} from '@/lib/securityStaffService';
 import { testDatabaseConnection } from '@/lib/testConnection';
 
-const Employees = () => {
+const SecurityStaff = () => {
   const [entityStaff, setEntityStaff] = useState([]);
   const [filteredEntityStaff, setFilteredEntityStaff] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
@@ -43,9 +43,9 @@ const Employees = () => {
   const [selectedEmployee, setSelectedEmployee] = useState(null);
   const { toast } = useToast();
 
-  // Load entity staff on component mount
+  // Load security staff on component mount
   useEffect(() => {
-    loadEntityStaff();
+    loadSecurityStaff();
     loadBackgroundStats();
     loadOnboardingStats();
   }, []);
@@ -67,26 +67,26 @@ const Employees = () => {
     }
   }, [searchTerm, entityStaff]);
 
-  const loadEntityStaff = async () => {
+  const loadSecurityStaff = async () => {
     setLoading(true);
     try {
-      const { data, error } = await getEntityStaff();
+      const { data, error } = await getSecurityStaff();
       if (error) throw error;
       
       setEntityStaff(data || []);
       
-      // Initialize sample data if no entity staff exist
+      // Initialize sample data if no security staff exist
       if (!data || data.length === 0) {
-        const { data: initData } = await initializeEntityStaffData();
+        const { data: initData } = await initializeSecurityStaffData();
         if (initData) {
           setEntityStaff(initData);
         }
       }
     } catch (error) {
-      console.error('Error loading entity staff:', error);
+      console.error('Error loading security staff:', error);
       toast({
         title: "Error",
-        description: "Failed to load entity staff. Please try again.",
+        description: "Failed to load security staff. Please try again.",
         variant: "destructive"
       });
     } finally {
@@ -96,7 +96,7 @@ const Employees = () => {
 
   const loadStats = async () => {
     try {
-      const { data, error } = await getEntityStaffStats();
+      const { data, error } = await getSecurityStaffStats();
       if (error) throw error;
       setStats(data);
     } catch (error) {
@@ -159,8 +159,8 @@ const Employees = () => {
     });
   };
 
-  // Generate entity staff types with real counts
-  const entityStaffTypes = Object.entries(ENTITY_STAFF_TYPES).map(([type, config]) => {
+  // Generate security staff types with real counts
+  const securityStaffTypes = Object.entries(SECURITY_STAFF_TYPES).map(([type, config]) => {
     const count = entityStaff.filter(staff => staff.type === type).length;
     return {
       type,
@@ -189,19 +189,19 @@ const Employees = () => {
         <div>
           <h1 className="text-3xl font-bold text-white flex items-center">
             <Users className="w-8 h-8 mr-3 text-blue-400" />
-            Entity Staff Management
+            Security Staff Management
           </h1>
-          <p className="text-gray-400 mt-1">Manage entity personnel, credentials, and compliance efficiently.</p>
+          <p className="text-gray-400 mt-1">Manage security personnel, credentials, and compliance efficiently.</p>
         </div>
         <Button onClick={handleAddEntityStaff} className="ios-button bg-blue-600 hover:bg-blue-700 mt-4 sm:mt-0">
           <Plus className="w-4 h-4 mr-2" />
-          Add Entity Staff
+          Add Security Staff
         </Button>
       </motion.div>
 
       <Tabs defaultValue="employees" className="space-y-6">
         <TabsList className={`${iosTabsListStyle} border-b border-slate-700`}>
-                      <TabsTrigger value="employees" className={`${iosTabsTriggerStyle} ${iosTabsActiveTriggerStyle}`}>Entity Staff</TabsTrigger>
+                      <TabsTrigger value="employees" className={`${iosTabsTriggerStyle} ${iosTabsActiveTriggerStyle}`}>Security Staff</TabsTrigger>
           <TabsTrigger value="types" className={`${iosTabsTriggerStyle} ${iosTabsActiveTriggerStyle}`}>Employee Types</TabsTrigger>
           <TabsTrigger value="background" className={`${iosTabsTriggerStyle} ${iosTabsActiveTriggerStyle}`}>Background Checks</TabsTrigger>
           <TabsTrigger value="onboarding" className={`${iosTabsTriggerStyle} ${iosTabsActiveTriggerStyle}`}>Onboarding</TabsTrigger>
@@ -213,12 +213,12 @@ const Employees = () => {
               <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between">
                 <CardTitle className="flex items-center space-x-2 text-white">
                   <Users className="w-5 h-5 text-blue-400" />
-                  <span>Active Entity Staff ({filteredEntityStaff.length})</span>
+                  <span>Active Security Staff ({filteredEntityStaff.length})</span>
                 </CardTitle>
                 <div className="relative mt-3 sm:mt-0">
                   <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
                   <Input
-                    placeholder="Search entity staff..."
+                    placeholder="Search security staff..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
                     className="pl-10 w-full sm:w-80 bg-slate-700/50 border-slate-600 text-gray-200 focus:ring-blue-500 focus:border-blue-500"
@@ -230,18 +230,18 @@ const Employees = () => {
               {loading ? (
                 <div className="flex items-center justify-center py-12">
                   <Loader2 className="w-8 h-8 animate-spin text-blue-400" />
-                  <span className="ml-3 text-gray-400">Loading entity staff...</span>
+                  <span className="ml-3 text-gray-400">Loading security staff...</span>
                 </div>
                               ) : filteredEntityStaff.length === 0 ? (
                 <div className="text-center py-12">
                   <Users className="w-12 h-12 text-gray-500 mx-auto mb-4" />
                   <p className="text-gray-400 mb-2">
-                    {searchTerm ? 'No entity staff found matching your search.' : 'No entity staff found.'}
+                    {searchTerm ? 'No security staff found matching your search.' : 'No security staff found.'}
                   </p>
                   {!searchTerm && (
                     <Button onClick={handleAddEntityStaff} className="mt-4">
                       <Plus className="w-4 h-4 mr-2" />
-                      Add First Entity Staff
+                      Add First Security Staff
                     </Button>
                   )}
                 </div>
@@ -317,12 +317,12 @@ const Employees = () => {
         <TabsContent value="types" className="space-y-6">
           <Card className="ios-card">
             <CardHeader>
-                          <CardTitle className="text-white">Entity Staff Role Definitions</CardTitle>
-            <CardDescription className="text-gray-400">Overview of different entity staff types and their requirements.</CardDescription>
+                          <CardTitle className="text-white">Security Staff Role Definitions</CardTitle>
+            <CardDescription className="text-gray-400">Overview of different security staff types and their requirements.</CardDescription>
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {entityStaffTypes.map((type, index) => (
+                {securityStaffTypes.map((type, index) => (
                   <motion.div
                     key={type.type}
                     initial={{ opacity: 0, scale: 0.9 }}
@@ -406,7 +406,7 @@ const Employees = () => {
                     </div>
                   </div>
                   <div className="text-xs text-gray-400 mt-2">
-                    Total Entity Staff: {backgroundStats ? backgroundStats.totalEntityStaff : '...'}
+                    Total Security Staff: {backgroundStats ? backgroundStats.totalEntityStaff : '...'}
                   </div>
                    <Button variant="outline" className="w-full mt-4 glass-button" onClick={() => toast({title: "🚧 Feature Not Implemented"})}>Manage Credentials</Button>
                 </div>
@@ -495,4 +495,4 @@ const Employees = () => {
   );
 };
 
-export default Employees;
+export default SecurityStaff; 

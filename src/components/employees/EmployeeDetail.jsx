@@ -22,7 +22,7 @@ import {
   RotateCcw
 } from 'lucide-react';
 import EmployeeForm from './EmployeeForm';
-import { updateEmployee } from '@/lib/employeeService';
+import { updateEntityStaff } from '@/lib/entityStaffService';
 
 const EmployeeDetail = ({ employee, onClose, onUpdate, staffType = 'security' }) => {
   const [showEditForm, setShowEditForm] = useState(false);

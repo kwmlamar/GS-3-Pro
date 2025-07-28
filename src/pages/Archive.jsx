@@ -30,7 +30,7 @@ import {
   HardHat,
   Loader2
 } from 'lucide-react';
-import { getEmployees, updateEmployee, deleteEmployee } from '@/lib/employeeService';
+import { getEntityStaff, updateEntityStaff, deleteEntityStaff } from '@/lib/entityStaffService';
 import { supabase } from '@/lib/supabaseClient';
 import EmployeeDetail from '@/components/employees/EmployeeDetail';
 
@@ -50,8 +50,8 @@ const Archive = () => {
   const fetchArchivedData = async () => {
     setLoading(true);
     try {
-      // Fetch archived employees
-      const { data: employeesData, error: employeesError } = await getEmployees();
+      // Fetch archived entity staff
+      const { data: employeesData, error: employeesError } = await getEntityStaff();
       if (employeesError) throw employeesError;
       const archivedEmployees = employeesData.filter(emp => emp.status === 'Archived');
       setEmployees(archivedEmployees);
@@ -106,7 +106,7 @@ const Archive = () => {
       
       switch (type) {
         case 'employee':
-          result = await updateEmployee(item.id, { ...item, status: 'Active' });
+          result = await updateEntityStaff(item.id, { ...item, status: 'Active' });
           break;
         case 'site':
           result = await supabase
@@ -167,7 +167,7 @@ const Archive = () => {
       
       switch (type) {
         case 'employee':
-          result = await deleteEmployee(item.id);
+          result = await deleteEntityStaff(item.id);
           break;
         case 'site':
           result = await supabase

@@ -9,7 +9,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/components/ui/use-toast';
 import { X, Save, UserPlus, Edit, Shield, AlertTriangle, Building2, MapPin, Crown, Users, Star, Briefcase, GraduationCap } from 'lucide-react';
-import { createEmployee, updateEmployee, EMPLOYEE_TYPES, getDepartments, createDepartment, getPotentialSupervisors } from '@/lib/employeeService';
+import { createEntityStaff, updateEntityStaff, ENTITY_STAFF_TYPES, getDepartments, createDepartment, getPotentialSupervisors } from '@/lib/entityStaffService';
 import { supabase } from '@/lib/supabaseClient';
 
 const EmployeeForm = ({ employee = null, onClose, onSuccess, staffType = 'security' }) => {

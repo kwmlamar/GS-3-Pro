@@ -140,7 +140,7 @@ const SubcontractorForm = ({ subcontractor = null, onClose, onSuccess }) => {
       }
 
       toast({
-        title: isEditing ? "Subcontractor Updated" : "Subcontractor Added",
+        title: isEditing ? "Security Company Updated" : "Security Company Added",
         description: `${formData.company_name} has been ${isEditing ? 'updated' : 'added'} successfully.`,
         variant: "default"
       });
@@ -151,7 +151,7 @@ const SubcontractorForm = ({ subcontractor = null, onClose, onSuccess }) => {
       console.error('Error saving subcontractor:', error);
       toast({
         title: "Error",
-        description: error.message || "Failed to save subcontractor. Please try again.",
+        description: error.message || "Failed to save security company. Please try again.",
         variant: "destructive"
       });
     } finally {
@@ -181,7 +181,7 @@ const SubcontractorForm = ({ subcontractor = null, onClose, onSuccess }) => {
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
               <CardTitle className="flex items-center space-x-2 text-white">
                 {isEditing ? <Edit className="w-5 h-5 text-blue-400" /> : <Building className="w-5 h-5 text-green-400" />}
-                <span>{isEditing ? 'Edit Subcontractor' : 'Add New Subcontractor'}</span>
+                <span>{isEditing ? 'Edit Security Company' : 'Add New Security Company'}</span>
               </CardTitle>
               <Button
                 variant="ghost"
@@ -495,7 +495,7 @@ const SubcontractorForm = ({ subcontractor = null, onClose, onSuccess }) => {
                       id="notes"
                       value={formData.notes}
                       onChange={(e) => handleInputChange('notes', e.target.value)}
-                      placeholder="Additional notes about the subcontractor..."
+                      placeholder="Additional notes about the security company..."
                       className="bg-slate-700/50 border-slate-600 text-white min-h-[80px]"
                     />
                   </div>
@@ -523,7 +523,7 @@ const SubcontractorForm = ({ subcontractor = null, onClose, onSuccess }) => {
                     ) : (
                       <div className="flex items-center space-x-2">
                         <Save className="w-4 h-4" />
-                        <span>{isEditing ? 'Update' : 'Save'} Subcontractor</span>
+                        <span>{isEditing ? 'Update' : 'Save'} Security Company</span>
                       </div>
                     )}
                   </Button>

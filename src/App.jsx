@@ -8,6 +8,7 @@ import Assessments from '@/pages/Assessments';
 import Sites from '@/pages/Sites';
 import Employees from '@/pages/Employees';
 import EntityStaff from '@/pages/EntityStaff';
+import SecurityStaff from '@/pages/SecurityStaff';
 import Subcontractors from '@/pages/Subcontractors';
 import Training from '@/pages/Training';
 import LiveClasses from '@/pages/LiveClasses';
@@ -135,7 +136,7 @@ function App() {
               <Route index element={<Dashboard userRole={userRole} />} />
               <Route path="assessments" element={<Assessments />} />
               <Route path="sites" element={<Sites />} />
-              <Route path="employees" element={<Employees />} />
+              <Route path="employees" element={<SecurityStaff />} />
               <Route path="chain-of-command" element={<ChainOfCommand />} />
               <Route path="entity-staff" element={<EntityStaff />} />
               <Route path="performance" element={<PerformancePage />} />
