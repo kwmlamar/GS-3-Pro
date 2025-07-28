@@ -225,11 +225,20 @@ export const searchSecurityStaff = async (searchTerm) => {
     const { data, error } = await supabase
       .from('security_staff')
       .select('*')
-      .or(`name.ilike.%${searchTerm}%,role.ilike.%${searchTerm}%,site.ilike.%${searchTerm}%`)
+      .or(`first_name.ilike.%${searchTerm}%,last_name.ilike.%${searchTerm}%,position.ilike.%${searchTerm}%`)
       .order('created_at', { ascending: false });
 
     if (error) throw error;
-    return { data, error: null };
+    
+    // Transform data to include name field for compatibility
+    const transformedData = data.map(staff => ({
+      ...staff,
+      name: `${staff.first_name} ${staff.last_name}`,
+      role: staff.position,
+      type: staff.position
+    }));
+
+    return { data: transformedData, error: null };
   } catch (error) {
     console.error('Error searching security staff:', error);
     return { data: null, error };
@@ -242,11 +251,20 @@ export const getSecurityStaffByType = async (type) => {
     const { data, error } = await supabase
       .from('security_staff')
       .select('*')
-      .eq('type', type)
+      .eq('position', type)
       .order('created_at', { ascending: false });
 
     if (error) throw error;
-    return { data, error: null };
+    
+    // Transform data to include name field for compatibility
+    const transformedData = data.map(staff => ({
+      ...staff,
+      name: `${staff.first_name} ${staff.last_name}`,
+      role: staff.position,
+      type: staff.position
+    }));
+
+    return { data: transformedData, error: null };
   } catch (error) {
     console.error('Error fetching security staff by type:', error);
     return { data: null, error };
@@ -258,7 +276,7 @@ export const getSecurityStaffStats = async () => {
   try {
     const { data: securityStaff, error } = await supabase
       .from('security_staff')
-      .select('type, status, compliance');
+      .select('position, status, compliance_score');
 
     if (error) throw error;
 
@@ -274,16 +292,17 @@ export const getSecurityStaffStats = async () => {
     };
 
     securityStaff.forEach(staff => {
-      // Count by type
-      stats.byType[staff.type] = (stats.byType[staff.type] || 0) + 1;
+      // Count by type (using position as type)
+      const type = staff.position;
+      stats.byType[type] = (stats.byType[type] || 0) + 1;
       
       // Count by status
       stats.byStatus[staff.status] = (stats.byStatus[staff.status] || 0) + 1;
       
       // Count by compliance
-      if (staff.compliance >= 95) {
+      if (staff.compliance_score >= 95) {
         stats.byCompliance.excellent++;
-      } else if (staff.compliance >= 85) {
+      } else if (staff.compliance_score >= 85) {
         stats.byCompliance.good++;
       } else {
         stats.byCompliance.needsImprovement++;
@@ -439,18 +458,26 @@ export const getPotentialSupervisors = async (excludeSecurityStaffId = null) => 
   try {
     let query = supabase
       .from('security_staff')
-      .select('id, name, role, type')
-      .in('type', ['Supervisor', 'Operations Management'])
+      .select('id, first_name, last_name, position, status')
       .eq('status', 'Active');
 
     if (excludeSecurityStaffId) {
       query = query.neq('id', excludeSecurityStaffId);
     }
 
-    const { data, error } = await query.order('name');
+    const { data, error } = await query.order('first_name');
 
     if (error) throw error;
-    return { data, error: null };
+    
+    // Transform data to include name field for compatibility
+    const transformedData = data.map(staff => ({
+      ...staff,
+      name: `${staff.first_name} ${staff.last_name}`,
+      role: staff.position,
+      type: staff.position
+    }));
+
+    return { data: transformedData, error: null };
   } catch (error) {
     console.error('Error fetching potential supervisors:', error);
     return { data: null, error };
@@ -462,13 +489,23 @@ export const getDirectReports = async (securityStaffId) => {
   try {
     const { data, error } = await supabase
       .from('security_staff')
-      .select('id, name, role, type, status, compliance')
+      .select('id, first_name, last_name, position, status, compliance_score')
       .eq('supervisor_id', securityStaffId)
       .eq('status', 'Active')
-      .order('name');
+      .order('first_name');
 
     if (error) throw error;
-    return { data, error: null };
+    
+    // Transform data to include name field for compatibility
+    const transformedData = data.map(staff => ({
+      ...staff,
+      name: `${staff.first_name} ${staff.last_name}`,
+      role: staff.position,
+      type: staff.position,
+      compliance: staff.compliance_score
+    }));
+
+    return { data: transformedData, error: null };
   } catch (error) {
     console.error('Error fetching direct reports:', error);
     return { data: null, error };
@@ -480,24 +517,40 @@ export const getFullReportingChain = async (securityStaffId) => {
   try {
     const { data, error } = await supabase
       .from('security_staff')
-      .select('id, name, role, type, supervisor_id')
+      .select('id, first_name, last_name, position, supervisor_id')
       .eq('id', securityStaffId)
       .single();
 
     if (error) throw error;
 
-    const chain = [data];
+    // Transform the initial data
+    const transformedData = {
+      ...data,
+      name: `${data.first_name} ${data.last_name}`,
+      role: data.position,
+      type: data.position
+    };
+
+    const chain = [transformedData];
     let currentId = data.supervisor_id;
 
     while (currentId) {
       const { data: supervisor, error: supervisorError } = await supabase
         .from('security_staff')
-        .select('id, name, role, type, supervisor_id')
+        .select('id, first_name, last_name, position, supervisor_id')
         .eq('id', currentId)
         .single();
 
       if (supervisorError) break;
-      chain.push(supervisor);
+      
+      const transformedSupervisor = {
+        ...supervisor,
+        name: `${supervisor.first_name} ${supervisor.last_name}`,
+        role: supervisor.position,
+        type: supervisor.position
+      };
+      
+      chain.push(transformedSupervisor);
       currentId = supervisor.supervisor_id;
     }
 
@@ -529,22 +582,30 @@ export const getOrganizationalChart = async () => {
       .from('security_staff')
       .select(`
         id,
-        name,
-        role,
-        type,
+        first_name,
+        last_name,
+        position,
         status,
-        compliance,
+        compliance_score,
         supervisor_id,
         subcontractor_profiles (company_name)
       `)
       .eq('status', 'Active')
-      .order('name');
+      .order('first_name');
 
     if (error) throw error;
 
-    // Add supervisor names and determine hierarchy levels
-    const chartData = data.map(staff => {
-      const supervisor = data.find(s => s.id === staff.supervisor_id);
+    // Transform data and add supervisor names and determine hierarchy levels
+    const transformedData = data.map(staff => ({
+      ...staff,
+      name: `${staff.first_name} ${staff.last_name}`,
+      role: staff.position,
+      type: staff.position,
+      compliance: staff.compliance_score
+    }));
+
+    const chartData = transformedData.map(staff => {
+      const supervisor = transformedData.find(s => s.id === staff.supervisor_id);
       return {
         ...staff,
         supervisor_name: supervisor?.name || null,
@@ -585,22 +646,30 @@ export const getSecurityStaffWithSupervisors = async () => {
       .from('security_staff')
       .select(`
         id,
-        name,
-        role,
-        type,
+        first_name,
+        last_name,
+        position,
         status,
-        compliance,
+        compliance_score,
         supervisor_id,
         subcontractor_profiles (company_name)
       `)
       .eq('status', 'Active')
-      .order('name');
+      .order('first_name');
 
     if (error) throw error;
 
-    // Add supervisor names
-    const staffWithSupervisors = data.map(staff => {
-      const supervisor = data.find(s => s.id === staff.supervisor_id);
+    // Transform data and add supervisor names
+    const transformedData = data.map(staff => ({
+      ...staff,
+      name: `${staff.first_name} ${staff.last_name}`,
+      role: staff.position,
+      type: staff.position,
+      compliance: staff.compliance_score
+    }));
+
+    const staffWithSupervisors = transformedData.map(staff => {
+      const supervisor = transformedData.find(s => s.id === staff.supervisor_id);
       return {
         ...staff,
         supervisor_name: supervisor?.name || null

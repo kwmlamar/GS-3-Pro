@@ -27,7 +27,8 @@ const SecurityStaffForm = ({ securityStaff = null, onClose, onSuccess }) => {
     phone: '',
     hire_date: new Date().toISOString().split('T')[0],
     notes: '',
-    supervisor_id: null
+    supervisor_id: null,
+    security_company_id: null
   });
   const [loading, setLoading] = useState(false);
   const [sites, setSites] = useState([]);
@@ -39,6 +40,8 @@ const SecurityStaffForm = ({ securityStaff = null, onClose, onSuccess }) => {
   const [showEntityDropdown, setShowEntityDropdown] = useState(false);
   const [supervisors, setSupervisors] = useState([]);
   const [supervisorsLoading, setSupervisorsLoading] = useState(false);
+  const [securityCompanies, setSecurityCompanies] = useState([]);
+  const [securityCompaniesLoading, setSecurityCompaniesLoading] = useState(false);
   const { toast } = useToast();
 
   const isEditing = !!securityStaff;
@@ -114,11 +117,26 @@ const SecurityStaffForm = ({ securityStaff = null, onClose, onSuccess }) => {
     }
   }, [toast, securityStaff?.id]);
 
+  // Fetch security companies for the dropdown
+  const fetchSecurityCompanies = useCallback(async () => {
+    setSecurityCompaniesLoading(true);
+    try {
+      const { data, error } = await getSecurityCompanies();
+      if (error) throw error;
+      setSecurityCompanies(data || []);
+    } catch (error) {
+      toast({ variant: 'destructive', title: 'Error fetching security companies', description: error.message });
+    } finally {
+      setSecurityCompaniesLoading(false);
+    }
+  }, [toast]);
+
   useEffect(() => {
     fetchSites();
     fetchDepartments();
     fetchSupervisors();
-  }, [fetchSites, fetchDepartments, fetchSupervisors]);
+    fetchSecurityCompanies();
+  }, [fetchSites, fetchDepartments, fetchSupervisors, fetchSecurityCompanies]);
 
   useEffect(() => {
     if (securityStaff) {
@@ -137,7 +155,8 @@ const SecurityStaffForm = ({ securityStaff = null, onClose, onSuccess }) => {
         phone: securityStaff.phone || '',
         hire_date: securityStaff.hire_date || new Date().toISOString().split('T')[0],
         notes: securityStaff.notes || '',
-        supervisor_id: securityStaff.supervisor_id || null
+        supervisor_id: securityStaff.supervisor_id || null,
+        security_company_id: securityStaff.security_company_id || null
       });
     }
   }, [securityStaff]);
@@ -241,6 +260,7 @@ const SecurityStaffForm = ({ securityStaff = null, onClose, onSuccess }) => {
           .filter(cert => cert.length > 0),
         notes: formData.notes,
         supervisor_id: formData.supervisor_id,
+        security_company_id: formData.security_company_id,
         entities: formData.entities
       };
 
@@ -395,6 +415,28 @@ const SecurityStaffForm = ({ securityStaff = null, onClose, onSuccess }) => {
                         </SelectContent>
                       </Select>
                     )}
+                  </div>
+
+                  {/* Security Company */}
+                  <div className="space-y-2">
+                    <Label htmlFor="security_company" className="text-white">Security Company</Label>
+                    <Select
+                      value={formData.security_company_id || ''}
+                      onValueChange={(value) => handleInputChange('security_company_id', value === '' ? null : value)}
+                    >
+                      <SelectTrigger className="bg-slate-700/50 border-slate-600 text-white">
+                        <SelectValue placeholder={securityCompaniesLoading ? "Loading security companies..." : "Select security company (optional)"} />
+                      </SelectTrigger>
+                      <SelectContent className="bg-slate-800 border-slate-600">
+                        <SelectItem value="" className="text-white">No Security Company</SelectItem>
+                        {securityCompanies.map((company) => (
+                          <SelectItem key={company.id} value={company.id} className="text-white">
+                            {company.company_name} - {company.service_specialization}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <p className="text-xs text-gray-400">Select the security company this person works for</p>
                   </div>
 
                   {/* Supervisor */}
