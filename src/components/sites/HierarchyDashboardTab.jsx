@@ -1,10 +1,11 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/components/ui/use-toast';
 import { BarChart3, Package, Layers, Globe } from 'lucide-react';
 import { iosInputStyle } from '@/pages/Sites';
+import EntityDetailsDialog from './EntityDetailsDialog';
 
 const iconMap = {
   site: Package,
@@ -15,12 +16,15 @@ const iconMap = {
 
 const HierarchyDashboardTab = ({ title, parentTypeForSelection, childTypeToDisplay, allSites, loading, selectedParent, setSelectedParent, getDashboardData }) => {
   const { toast } = useToast();
+  const [selectedEntity, setSelectedEntity] = useState(null);
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
   const parentEntities = allSites.filter(s => s.type === parentTypeForSelection);
   const data = getDashboardData(parentTypeForSelection, childTypeToDisplay);
   const IconComponent = iconMap[parentTypeForSelection] || BarChart3;
 
   return (
-    <Card className="ios-card">
+    <>
+      <Card className="ios-card">
       <CardHeader>
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center">
           <CardTitle className="text-xl text-white flex items-center mb-2 sm:mb-0">
@@ -66,7 +70,17 @@ const HierarchyDashboardTab = ({ title, parentTypeForSelection, childTypeToDispl
                 <CardContent>
                   <p className="text-xs text-slate-500">Address: {item.address ? JSON.stringify(item.address) : 'N/A'}</p>
                   <p className="text-xs text-slate-500 mt-1">Client: {item.client_name || 'N/A'}</p>
-                  <Button size="sm" variant="link" className="text-blue-400 hover:text-blue-300 p-0 mt-2 text-xs" onClick={() => toast({title: "🚧 Feature Not Implemented"})}>View Details</Button>
+                  <Button 
+                    size="sm" 
+                    variant="link" 
+                    className="text-blue-400 hover:text-blue-300 p-0 mt-2 text-xs" 
+                    onClick={() => {
+                      setSelectedEntity(item);
+                      setIsDialogOpen(true);
+                    }}
+                  >
+                    View Details
+                  </Button>
                 </CardContent>
               </Card>
             ))}
@@ -79,6 +93,17 @@ const HierarchyDashboardTab = ({ title, parentTypeForSelection, childTypeToDispl
         </div>
       </CardContent>
     </Card>
+    
+    {/* Entity Details Dialog */}
+    <EntityDetailsDialog
+      isOpen={isDialogOpen}
+      onClose={() => {
+        setIsDialogOpen(false);
+        setSelectedEntity(null);
+      }}
+      entity={selectedEntity}
+    />
+  </>
   );
 };
 

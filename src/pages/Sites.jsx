@@ -12,6 +12,7 @@ import { ArrowLeft, Plus, Network, Search, ListFilter } from 'lucide-react';
 import EntityForm from '@/components/sites/EntityForm';
 import EntityTable from '@/components/sites/EntityTable';
 import HierarchyDashboardTab from '@/components/sites/HierarchyDashboardTab';
+import EntityDetailsDialog from '@/components/sites/EntityDetailsDialog';
 
 export const siteTypes = ['site', 'region', 'special_activity', 'national', 'global'];
 export const iosButtonStyle = "bg-[#607D8B] hover:bg-[#546E7A] text-white";
@@ -38,6 +39,8 @@ const Sites = () => {
   console.log('🔍 Search term state:', searchTerm);
   const [activeTab, setActiveTab] = useState('hierarchy_view');
   const [selectedParentForDashboard, setSelectedParentForDashboard] = useState(null);
+  const [selectedEntity, setSelectedEntity] = useState(null);
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
 
   const fetchSitesAndClients = useCallback(async () => {
     setLoading(true);
@@ -309,7 +312,17 @@ const Sites = () => {
                           <p className="text-xs text-slate-500">Parent: {item.parent_name || 'None'}</p>
                           <p className="text-xs text-slate-500 mt-1">Address: {item.address ? JSON.stringify(item.address) : 'N/A'}</p>
                           <p className="text-xs text-slate-500 mt-1">Client: {item.client_name || 'N/A'}</p>
-                          <Button size="sm" variant="link" className="text-blue-400 hover:text-blue-300 p-0 mt-2 text-xs" onClick={() => toast({title: "🚧 Feature Not Implemented"})}>View Details</Button>
+                          <Button 
+                            size="sm" 
+                            variant="link" 
+                            className="text-blue-400 hover:text-blue-300 p-0 mt-2 text-xs" 
+                            onClick={() => {
+                              setSelectedEntity(item);
+                              setIsDialogOpen(true);
+                            }}
+                          >
+                            View Details
+                          </Button>
                         </CardContent>
                       </Card>
                     ))}
@@ -359,6 +372,16 @@ const Sites = () => {
 
         </Tabs>
       )}
+      
+      {/* Entity Details Dialog */}
+      <EntityDetailsDialog
+        isOpen={isDialogOpen}
+        onClose={() => {
+          setIsDialogOpen(false);
+          setSelectedEntity(null);
+        }}
+        entity={selectedEntity}
+      />
     </div>
   );
 };
