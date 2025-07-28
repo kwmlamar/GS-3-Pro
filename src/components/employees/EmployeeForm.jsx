@@ -27,7 +27,7 @@ const EmployeeForm = ({ employee = null, onClose, onSuccess, staffType = 'securi
     phone: '',
     hire_date: new Date().toISOString().split('T')[0],
     notes: '',
-    supervisor_id: null
+    supervisor_ids: []
   });
   const [loading, setLoading] = useState(false);
   const [sites, setSites] = useState([]);
@@ -37,6 +37,7 @@ const EmployeeForm = ({ employee = null, onClose, onSuccess, staffType = 'securi
   const [showNewDepartmentInput, setShowNewDepartmentInput] = useState(false);
   const [newDepartment, setNewDepartment] = useState('');
   const [showEntityDropdown, setShowEntityDropdown] = useState(false);
+  const [showSupervisorDropdown, setShowSupervisorDropdown] = useState(false);
   const [supervisors, setSupervisors] = useState([]);
   const [supervisorsLoading, setSupervisorsLoading] = useState(false);
   const { toast } = useToast();
@@ -137,7 +138,7 @@ const EmployeeForm = ({ employee = null, onClose, onSuccess, staffType = 'securi
         phone: employee.phone || '',
         hire_date: employee.hire_date || new Date().toISOString().split('T')[0],
         notes: employee.notes || '',
-        supervisor_id: employee.supervisor_id || null
+        supervisor_ids: employee.supervisor_ids || [employee.supervisor_id].filter(Boolean) || []
       });
     }
   }, [employee]);
@@ -148,13 +149,16 @@ const EmployeeForm = ({ employee = null, onClose, onSuccess, staffType = 'securi
       if (showEntityDropdown && !event.target.closest('.entity-dropdown')) {
         setShowEntityDropdown(false);
       }
+      if (showSupervisorDropdown && !event.target.closest('.supervisor-dropdown')) {
+        setShowSupervisorDropdown(false);
+      }
     };
 
     document.addEventListener('mousedown', handleClickOutside);
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
     };
-  }, [showEntityDropdown]);
+  }, [showEntityDropdown, showSupervisorDropdown]);
 
   const handleInputChange = (field, value) => {
     setFormData(prev => ({
@@ -391,46 +395,84 @@ const EmployeeForm = ({ employee = null, onClose, onSuccess, staffType = 'securi
                     )}
                   </div>
 
-                  {/* Supervisor */}
+                  {/* Supervisors */}
                   <div className="space-y-2">
-                    <Label htmlFor="supervisor" className="text-white">Supervisor</Label>
-                                        <Select
-                      value={formData.supervisor_id || ''}
-                      onValueChange={(value) => handleInputChange('supervisor_id', value === '' ? null : value)}
-                    >
-                      <SelectTrigger className="bg-slate-700/50 border-slate-600 text-white">
-                        {formData.supervisor_id && !supervisorsLoading ? (
-                          <div className="flex items-center justify-between w-full">
-                            <span className="text-white">
-                              {(() => {
-                                // Convert both to strings for comparison to handle type mismatches
-                                const selectedSupervisor = supervisors.find(s => String(s.id) === String(formData.supervisor_id));
-                                console.log('Supervisor lookup:', {
-                                  supervisorId: formData.supervisor_id,
-                                  supervisors: supervisors.map(s => ({ id: s.id, name: s.name })),
-                                  found: selectedSupervisor
-                                });
-                                return selectedSupervisor ? `${selectedSupervisor.name} (${selectedSupervisor.role})` : 'Loading...';
-                              })()}
-                            </span>
-                            <svg className="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                            </svg>
-                          </div>
-                        ) : (
-                          <SelectValue placeholder={supervisorsLoading ? "Loading supervisors..." : "Select supervisor (optional)"} />
-                        )}
-                      </SelectTrigger>
-                      <SelectContent className="bg-slate-800 border-slate-600">
-                        <SelectItem value="" className="text-white">No Supervisor</SelectItem>
-                        {supervisors.map((supervisor) => (
-                          <SelectItem key={supervisor.id} value={supervisor.id} className="text-white">
-                            {supervisor.name} ({supervisor.role}) - {supervisor.type}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <p className="text-xs text-gray-400">Select the employee this person reports to</p>
+                    <Label htmlFor="supervisors" className="text-white">Supervisors</Label>
+                    <div className="relative supervisor-dropdown">
+                      <div
+                        onClick={() => setShowSupervisorDropdown(!showSupervisorDropdown)}
+                        className="flex items-center justify-between w-full p-3 bg-slate-700/50 border border-slate-600 rounded-lg cursor-pointer hover:bg-slate-700/70"
+                      >
+                        <div className="flex flex-wrap gap-1">
+                          {formData.supervisor_ids.length > 0 ? (
+                            formData.supervisor_ids.map((supervisorId) => {
+                              const supervisor = supervisors.find(s => s.id === supervisorId);
+                              return supervisor ? (
+                                <span key={supervisorId} className="inline-flex items-center px-2 py-1 bg-green-600/20 text-green-300 text-xs rounded border border-green-500/30">
+                                  {supervisor.name} ({supervisor.role})
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      setFormData(prev => ({
+                                        ...prev,
+                                        supervisor_ids: prev.supervisor_ids.filter(id => id !== supervisorId)
+                                      }));
+                                    }}
+                                    className="ml-1 text-green-400 hover:text-green-300"
+                                  >
+                                    ×
+                                  </button>
+                                </span>
+                              ) : null;
+                            })
+                          ) : (
+                            <span className="text-slate-400">Select supervisors...</span>
+                          )}
+                        </div>
+                        <svg className="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                        </svg>
+                      </div>
+                      
+                      {showSupervisorDropdown && (
+                        <div className="absolute z-50 w-full mt-1 bg-slate-800 border border-slate-600 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+                          {supervisors.map((supervisor) => (
+                            <div
+                              key={supervisor.id}
+                              onClick={() => {
+                                if (formData.supervisor_ids.includes(supervisor.id)) {
+                                  setFormData(prev => ({
+                                    ...prev,
+                                    supervisor_ids: prev.supervisor_ids.filter(id => id !== supervisor.id)
+                                  }));
+                                } else {
+                                  setFormData(prev => ({
+                                    ...prev,
+                                    supervisor_ids: [...prev.supervisor_ids, supervisor.id]
+                                  }));
+                                }
+                              }}
+                              className={`p-3 cursor-pointer hover:bg-slate-700 ${
+                                formData.supervisor_ids.includes(supervisor.id) 
+                                  ? 'bg-green-600/20 text-green-300' 
+                                  : 'text-white'
+                              }`}
+                            >
+                              <div className="flex items-center justify-between">
+                                <span>{supervisor.name} ({supervisor.role})</span>
+                                {formData.supervisor_ids.includes(supervisor.id) && (
+                                  <svg className="w-4 h-4 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                                  </svg>
+                                )}
+                              </div>
+                              <div className="text-xs text-gray-400 mt-1">{supervisor.type}</div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                    <p className="text-xs text-gray-400">Select the supervisors this person reports to</p>
                   </div>
 
                   <div className="space-y-2">

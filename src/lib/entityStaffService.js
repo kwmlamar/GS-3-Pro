@@ -84,8 +84,13 @@ export const createEntityStaff = async (entityStaffData) => {
       }
     }
 
-    // Handle entities - extract entity IDs and remove from entity staff data
-    const { department, entities, ...dataToSave } = finalEntityStaffData;
+    // Handle entities and supervisors - extract from entity staff data
+    const { department, entities, supervisor_ids, ...dataToSave } = finalEntityStaffData;
+
+    // Set primary supervisor (first one in the array) to supervisor_id field
+    if (supervisor_ids && supervisor_ids.length > 0) {
+      dataToSave.supervisor_id = supervisor_ids[0];
+    }
 
     const { data, error } = await supabase
       .from('entity_staff')
@@ -116,7 +121,13 @@ export const createEntityStaff = async (entityStaffData) => {
       }
     }
 
-    return { data, error: null };
+    // Add supervisor_ids back to the returned data for consistency
+    const resultData = {
+      ...data,
+      supervisor_ids: supervisor_ids || []
+    };
+
+    return { data: resultData, error: null };
   } catch (error) {
     console.error('Error creating entity staff:', error);
     return { data: null, error };
@@ -225,8 +236,15 @@ export const updateEntityStaff = async (id, updates) => {
       }
     }
 
-    // Handle entities - extract entity IDs and remove from entity staff data
-    const { department, entities, ...dataToSave } = finalUpdates;
+    // Handle entities and supervisors - extract from entity staff data
+    const { department, entities, supervisor_ids, ...dataToSave } = finalUpdates;
+
+    // Set primary supervisor (first one in the array) to supervisor_id field
+    if (supervisor_ids && supervisor_ids.length > 0) {
+      dataToSave.supervisor_id = supervisor_ids[0];
+    } else {
+      dataToSave.supervisor_id = null;
+    }
 
     const { data, error } = await supabase
       .from('entity_staff')
@@ -267,7 +285,13 @@ export const updateEntityStaff = async (id, updates) => {
       }
     }
 
-    return { data, error: null };
+    // Add supervisor_ids back to the returned data for consistency
+    const resultData = {
+      ...data,
+      supervisor_ids: supervisor_ids || []
+    };
+
+    return { data: resultData, error: null };
   } catch (error) {
     console.error('Error updating entity staff:', error);
     return { data: null, error };

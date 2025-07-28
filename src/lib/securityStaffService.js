@@ -37,8 +37,13 @@ export const SECURITY_STAFF_TYPES = {
 // Create security staff
 export const createSecurityStaff = async (securityStaffData) => {
   try {
-    // Handle entities - extract entity IDs and remove from security staff data
-    const { entities, ...dataToSave } = securityStaffData;
+    // Handle entities and supervisors - extract from security staff data
+    const { entities, supervisor_ids, ...dataToSave } = securityStaffData;
+
+    // Set primary supervisor (first one in the array) to supervisor_id field
+    if (supervisor_ids && supervisor_ids.length > 0) {
+      dataToSave.supervisor_id = supervisor_ids[0];
+    }
 
     const { data, error } = await supabase
       .from('security_staff')
@@ -69,7 +74,13 @@ export const createSecurityStaff = async (securityStaffData) => {
       }
     }
 
-    return { data, error: null };
+    // Add supervisor_ids back to the returned data for consistency
+    const resultData = {
+      ...data,
+      supervisor_ids: supervisor_ids || []
+    };
+
+    return { data: resultData, error: null };
   } catch (error) {
     console.error('Error creating security staff:', error);
     return { data: null, error };
@@ -154,8 +165,15 @@ export const getSecurityStaffById = async (id) => {
 // Update security staff
 export const updateSecurityStaff = async (id, updates) => {
   try {
-    // Handle entities - extract entity IDs and remove from security staff data
-    const { entities, ...dataToUpdate } = updates;
+    // Handle entities and supervisors - extract from security staff data
+    const { entities, supervisor_ids, ...dataToUpdate } = updates;
+
+    // Set primary supervisor (first one in the array) to supervisor_id field
+    if (supervisor_ids && supervisor_ids.length > 0) {
+      dataToUpdate.supervisor_id = supervisor_ids[0];
+    } else {
+      dataToUpdate.supervisor_id = null;
+    }
 
     const { data, error } = await supabase
       .from('security_staff')
@@ -196,7 +214,13 @@ export const updateSecurityStaff = async (id, updates) => {
       }
     }
 
-    return { data, error: null };
+    // Add supervisor_ids back to the returned data for consistency
+    const resultData = {
+      ...data,
+      supervisor_ids: supervisor_ids || []
+    };
+
+    return { data: resultData, error: null };
   } catch (error) {
     console.error('Error updating security staff:', error);
     return { data: null, error };

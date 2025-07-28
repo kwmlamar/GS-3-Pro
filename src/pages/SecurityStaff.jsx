@@ -19,7 +19,6 @@ import {
   Loader2
 } from 'lucide-react';
 import SecurityStaffForm from '@/components/security-staff/SecurityStaffForm';
-import EmployeeDetail from '@/components/employees/EmployeeDetail';
 import { 
   getSecurityStaff, 
   searchSecurityStaff, 
@@ -483,13 +482,12 @@ const SecurityStaff = () => {
         />
       )}
 
-      {/* Employee Detail Modal */}
+      {/* Security Staff Detail Modal */}
       {selectedEmployee && (
-        <EmployeeDetail
-          employee={selectedEmployee}
+        <SecurityStaffForm
+          securityStaff={selectedEmployee}
           onClose={() => setSelectedEmployee(null)}
-          onUpdate={handleEntityStaffUpdate}
-          staffType="security"
+          onSuccess={handleEntityStaffUpdate}
         />
       )}
     </div>
