@@ -210,7 +210,10 @@ const SecurityCompanyForm = ({ securityCompany = null, onClose, onSuccess }) => 
         hourly_rate: formData.hourly_rate ? parseFloat(formData.hourly_rate) : null,
         max_workers: formData.max_workers ? parseInt(formData.max_workers) : null,
         current_workers: formData.current_workers ? parseInt(formData.current_workers) : null,
-        performance_rating: formData.performance_rating ? parseFloat(formData.performance_rating) : null
+        performance_rating: formData.performance_rating ? parseFloat(formData.performance_rating) : null,
+        // Handle empty date fields - convert empty strings to null
+        contract_start_date: formData.contract_start_date && formData.contract_start_date.trim() !== '' ? formData.contract_start_date : null,
+        contract_end_date: formData.contract_end_date && formData.contract_end_date.trim() !== '' ? formData.contract_end_date : null
       };
 
       let result;
