@@ -37,7 +37,7 @@ import EmployeeDetail from '@/components/employees/EmployeeDetail';
 const Archive = () => {
   const [employees, setEmployees] = useState([]);
   const [sites, setSites] = useState([]);
-  const [subcontractors, setSubcontractors] = useState([]);
+  const [securityCompanies, setSecurityCompanies] = useState([]);
   const [training, setTraining] = useState([]);
   const [incidents, setIncidents] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -63,12 +63,12 @@ const Archive = () => {
         .eq('is_active', false);
       if (!sitesError) setSites(sitesData || []);
 
-      // Fetch archived subcontractors
-      const { data: subcontractorsData, error: subcontractorsError } = await supabase
-        .from('subcontractors')
+      // Fetch archived security companies
+      const { data: securityCompaniesData, error: securityCompaniesError } = await supabase
+        .from('subcontractor_profiles')
         .select('*')
         .eq('status', 'Archived');
-      if (!subcontractorsError) setSubcontractors(subcontractorsData || []);
+      if (!securityCompaniesError) setSecurityCompanies(securityCompaniesData || []);
 
       // Fetch archived training courses
       const { data: trainingData, error: trainingError } = await supabase
@@ -114,9 +114,9 @@ const Archive = () => {
             .update({ is_active: true })
             .eq('id', item.id);
           break;
-        case 'subcontractor':
+        case 'security-company':
           result = await supabase
-            .from('subcontractors')
+            .from('subcontractor_profiles')
             .update({ status: 'Active' })
             .eq('id', item.id);
           break;
@@ -175,9 +175,9 @@ const Archive = () => {
             .delete()
             .eq('id', item.id);
           break;
-        case 'subcontractor':
+        case 'security-company':
           result = await supabase
-            .from('subcontractors')
+            .from('subcontractor_profiles')
             .delete()
             .eq('id', item.id);
           break;
@@ -256,14 +256,14 @@ const Archive = () => {
   const getTabStats = () => {
     const filteredEmployees = filterItems(employees, searchTerm);
     const filteredSites = filterItems(sites, searchTerm);
-    const filteredSubcontractors = filterItems(subcontractors, searchTerm);
+    const filteredSecurityCompanies = filterItems(securityCompanies, searchTerm);
     const filteredTraining = filterItems(training, searchTerm);
     const filteredIncidents = filterItems(incidents, searchTerm);
 
     return {
       employees: { total: employees.length, filtered: filteredEmployees.length },
       sites: { total: sites.length, filtered: filteredSites.length },
-      subcontractors: { total: subcontractors.length, filtered: filteredSubcontractors.length },
+      securityCompanies: { total: securityCompanies.length, filtered: filteredSecurityCompanies.length },
       training: { total: training.length, filtered: filteredTraining.length },
       incidents: { total: incidents.length, filtered: filteredIncidents.length }
     };
@@ -329,9 +329,9 @@ const Archive = () => {
           <CardContent className="p-4">
             <div className="flex items-center space-x-2">
               <Briefcase className="w-5 h-5 text-orange-400" />
-              <span className="text-white font-semibold">Subcontractors</span>
+              <span className="text-white font-semibold">Security Companies</span>
             </div>
-            <p className="text-2xl font-bold text-white mt-2">{stats.subcontractors.total}</p>
+            <p className="text-2xl font-bold text-white mt-2">{stats.securityCompanies.total}</p>
           </CardContent>
         </Card>
         <Card className="ios-card">
@@ -380,9 +380,9 @@ const Archive = () => {
             <Building2 className="w-4 h-4 mr-2" />
             Sites ({stats.sites.filtered})
           </TabsTrigger>
-          <TabsTrigger value="subcontractors" className="data-[state=active]:bg-slate-700 data-[state=active]:text-white">
+          <TabsTrigger value="security-companies" className="data-[state=active]:bg-slate-700 data-[state=active]:text-white">
             <Briefcase className="w-4 h-4 mr-2" />
-            Subcontractors ({stats.subcontractors.filtered})
+            Security Companies ({stats.securityCompanies.filtered})
           </TabsTrigger>
           <TabsTrigger value="training" className="data-[state=active]:bg-slate-700 data-[state=active]:text-white">
             <GraduationCap className="w-4 h-4 mr-2" />
@@ -554,13 +554,13 @@ const Archive = () => {
           </div>
         </TabsContent>
 
-        {/* Subcontractors Tab */}
-        <TabsContent value="subcontractors" className="space-y-4">
+        {/* Security Companies Tab */}
+        <TabsContent value="security-companies" className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             <AnimatePresence>
-              {filterItems(subcontractors, searchTerm).map((subcontractor) => (
+              {filterItems(securityCompanies, searchTerm).map((securityCompany) => (
                 <motion.div
-                  key={subcontractor.id}
+                  key={securityCompany.id}
                   initial={{ opacity: 0, scale: 0.9 }}
                   animate={{ opacity: 1, scale: 1 }}
                   exit={{ opacity: 0, scale: 0.9 }}
@@ -571,41 +571,41 @@ const Archive = () => {
                       <div className="flex items-start justify-between mb-3">
                         <div className="flex items-center space-x-3">
                           <div className="w-10 h-10 bg-gradient-to-br from-orange-500 to-red-600 rounded-full flex items-center justify-center text-white text-sm font-bold">
-                            {subcontractor.name.split(' ').map(n => n[0]).join('')}
+                            {securityCompany.company_name.split(' ').map(n => n[0]).join('')}
                           </div>
                           <div>
-                            <h3 className="text-white font-semibold">{subcontractor.name}</h3>
-                            <p className="text-slate-400 text-sm">{subcontractor.service_type}</p>
+                            <h3 className="text-white font-semibold">{securityCompany.company_name}</h3>
+                            <p className="text-slate-400 text-sm">{securityCompany.service_specialization}</p>
                           </div>
                         </div>
-                        <Badge className={getStatusColor(subcontractor.status)}>
-                          {subcontractor.status}
+                        <Badge className={getStatusColor(securityCompany.status)}>
+                          {securityCompany.status}
                         </Badge>
                       </div>
 
                       <div className="space-y-2 mb-4">
-                        {subcontractor.email && (
+                        {securityCompany.contact_email && (
                           <div className="flex items-center space-x-2 text-sm">
                             <Mail className="w-4 h-4 text-slate-400" />
-                            <span className="text-slate-300">{subcontractor.email}</span>
+                            <span className="text-slate-300">{securityCompany.contact_email}</span>
                           </div>
                         )}
-                        {subcontractor.phone && (
+                        {securityCompany.contact_phone && (
                           <div className="flex items-center space-x-2 text-sm">
                             <Phone className="w-4 h-4 text-slate-400" />
-                            <span className="text-slate-300">{subcontractor.phone}</span>
+                            <span className="text-slate-300">{securityCompany.contact_phone}</span>
                           </div>
                         )}
                         <div className="flex items-center space-x-2 text-sm">
                           <MapPin className="w-4 h-4 text-slate-400" />
-                          <span className="text-slate-300">{subcontractor.location || 'No location'}</span>
+                          <span className="text-slate-300">{securityCompany.address?.city || 'No location'}</span>
                         </div>
                       </div>
 
                       <div className="flex space-x-2">
                         <Button
                           size="sm"
-                          onClick={() => handleRestore(subcontractor, 'subcontractor')}
+                          onClick={() => handleRestore(securityCompany, 'security-company')}
                           className="flex-1 bg-green-600 hover:bg-green-700"
                         >
                           <RotateCcw className="w-4 h-4 mr-2" />
@@ -614,7 +614,7 @@ const Archive = () => {
                         <Button
                           size="sm"
                           variant="destructive"
-                          onClick={() => handlePermanentDelete(subcontractor, 'subcontractor')}
+                          onClick={() => handlePermanentDelete(securityCompany, 'security-company')}
                           className="bg-red-600 hover:bg-red-700"
                         >
                           <Trash2 className="w-4 h-4" />

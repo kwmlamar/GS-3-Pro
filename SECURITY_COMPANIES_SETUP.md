@@ -1,24 +1,24 @@
-# Subcontractor Management Setup Guide
+# Security Company Management Setup Guide
 
 ## Overview
-This guide will help you set up the database schema for the subcontractor management system and populate it with sample data.
+This guide will help you set up the database schema for the security company management system and populate it with sample data.
 
 ## Step 1: Create the Database Tables
 
-You need to create the subcontractor tables in your Supabase database. You can do this through the Supabase dashboard:
+You need to create the security company tables in your Supabase database. You can do this through the Supabase dashboard:
 
 1. Go to your Supabase project dashboard
 2. Navigate to the SQL Editor
 3. Run the following SQL:
 
 ```sql
--- Run the complete SQL from create-subcontractors-table.sql
+-- Run the complete SQL from create-security-companies-table.sql
 ```
 
 This will create:
-- `subcontractor_profiles` - Main subcontractor information
-- `subcontractor_sites` - Site assignments for subcontractors
-- `subcontractor_incidents` - Incident tracking for subcontractors
+- `subcontractor_profiles` - Main security company information
+- `subcontractor_sites` - Site assignments for security companies
+- `subcontractor_incidents` - Incident tracking for security companies
 - `subcontractor_performance_logs` - Performance tracking
 
 ## Step 2: Populate Sample Data
@@ -26,27 +26,27 @@ This will create:
 After creating the tables, run the following script to populate them with sample data:
 
 ```bash
-node setup-subcontractors.js
+node setup-security-companies.js
 ```
 
-This will create 6 sample subcontractors with realistic data:
-- Alpha Security Services (Corporate Security)
-- Guardian Event Security (Event Security)
-- MediGuard Healthcare Security (Healthcare Security)
-- RetailShield Loss Prevention (Retail Security)
-- Industrial Safety Solutions (Industrial Security)
-- Premier Security Group (General Security - Pending Review)
+This will create 6 sample security companies with realistic data:
+- Alpha Security Services (Corporate Security - Tier 1)
+- Guardian Event Security (Event Security - Tier 1)
+- MediGuard Healthcare Security (Healthcare Security - Tier 2)
+- RetailShield Loss Prevention (Retail Security - Tier 2)
+- Industrial Safety Solutions (Industrial Security - Tier 3)
+- Premier Security Group (General Security - Tier 3, Pending Review)
 
 ## Step 3: Verify the Setup
 
-1. Navigate to the Subcontractors page in your application (`/subcontractors`)
-2. You should see the subcontractor data displayed in the overview tab
+1. Navigate to the Security Companies page in your application (`/security-companies`)
+2. You should see the security company data displayed in the overview tab
 3. The compliance tab should show real statistics based on the data
 
 ## Database Schema
 
 ### subcontractor_profiles
-Main table containing subcontractor information:
+Main table containing security company information:
 - Basic company details (name, contact info)
 - Service specialization and status
 - Vetting and compliance information
@@ -55,13 +55,13 @@ Main table containing subcontractor information:
 - Contract details and worker counts
 
 ### subcontractor_sites
-Links subcontractors to specific sites:
+Links security companies to specific sites:
 - Assignment details and worker counts
 - Contract terms and performance notes
 - Start/end dates and status tracking
 
 ### subcontractor_incidents
-Tracks incidents involving subcontractors:
+Tracks incidents involving security companies:
 - Incident type and severity
 - Description and resolution notes
 - Status tracking and timestamps
@@ -74,30 +74,52 @@ Performance tracking over time:
 
 ## Features
 
-The subcontractor management system includes:
+The security company management system includes:
 
-- **Comprehensive Profiles**: Complete subcontractor information with contact details, specializations, and compliance data
-- **Site Assignments**: Track which subcontractors are assigned to which sites
-- **Incident Tracking**: Monitor and resolve incidents involving subcontractors
+- **Tier System**: Three-tier classification system (Tier 1 - Primary, Tier 2 - Standard, Tier 3 - Development)
+- **Comprehensive Profiles**: Complete security company information with contact details, specializations, and compliance data
+- **Site Assignments**: Track which security companies are assigned to which sites
+- **Incident Tracking**: Monitor and resolve incidents involving security companies
 - **Performance Monitoring**: Track performance metrics and ratings over time
 - **Compliance Management**: Vetting status and certification tracking
 - **Insurance & Certifications**: JSON fields for flexible insurance and certification data
 
 ## Dashboard Features
 
-The subcontractors page provides:
+The security companies page provides:
 
-1. **Overview Tab**: Complete list of subcontractors with search and filtering
-2. **Performance Tab**: Performance metrics and KPIs (coming soon)
-3. **Compliance Tab**: Vetting status and compliance statistics
-4. **Data Access Tab**: Access control configuration (coming soon)
+1. **Overview Tab**: Complete list of security companies with search and tier filtering
+2. **Tier System Tab**: Detailed view of the three-tier classification system with requirements and benefits
+3. **Performance Tab**: Performance metrics and KPIs (coming soon)
+4. **Compliance Tab**: Vetting status and compliance statistics
+5. **Data Access Tab**: Access control configuration (coming soon)
 
-Each subcontractor card shows:
+Each security company card shows:
 - Company name and status badges
+- Tier classification with color-coded badges
 - Contact information and location
 - Service specialization and performance rating
 - Number of sites assigned
 - Vetting status and compliance information
+
+## Tier System
+
+The security company tier system provides a structured approach to classifying and managing security providers:
+
+### Tier 1 - Primary
+- **Description**: Premium security companies with highest standards and capabilities
+- **Requirements**: Minimum 5 years experience, ISO 9001 certification, comprehensive insurance ($5M+), advanced training, 24/7 support, multi-site management
+- **Benefits**: Priority assignments, exclusive access to premium sites, reduced vetting, direct client communication, performance bonuses
+
+### Tier 2 - Standard
+- **Description**: Established security companies with proven track record
+- **Requirements**: Minimum 2 years experience, state license, basic insurance ($1M+), standard training, business hours support, single-site capability
+- **Benefits**: Standard assignments, regular site access, standard vetting process, supervised client communication
+
+### Tier 3 - Development
+- **Description**: New or developing security companies building capabilities
+- **Requirements**: Valid license, basic insurance ($500K+), fundamental training, limited support hours, single-site focus
+- **Benefits**: Limited assignments, restricted access, enhanced monitoring, supervised operations, development-focused metrics
 
 ## Service Specializations
 

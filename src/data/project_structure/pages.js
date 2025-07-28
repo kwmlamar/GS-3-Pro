@@ -290,7 +290,7 @@ export const pagesFolder = {
         { name: "Reports.jsx", type: "file", content: `// Content available in codebase` },
         { name: "Scheduling.jsx", type: "file", content: `// Content available in codebase` },
         { name: "Sites.jsx", type: "file", content: `// Content available in codebase` },
-        { name: "Subcontractors.jsx", type: "file", content: `// Content available in codebase` },
+        { name: "SecurityCompanies.jsx", type: "file", content: `// Content available in codebase` },
         { name: "Training.jsx", type: "file", content: `// Content available in codebase` },
         reportsFolder
     ]

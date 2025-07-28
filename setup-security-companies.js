@@ -11,7 +11,7 @@ if (!supabaseUrl || !supabaseKey) {
 
 const supabase = createClient(supabaseUrl, supabaseKey);
 
-const sampleSubcontractors = [
+const sampleSecurityCompanies = [
   {
     company_name: 'Alpha Security Services',
     contact_person: 'Michael Rodriguez',
@@ -20,6 +20,8 @@ const sampleSubcontractors = [
     service_specialization: 'Corporate Security',
     status: 'Active',
     vetting_status: 'Approved',
+    tier: 1,
+    client_id: 1, // Acme Corporation
     insurance_coverage: {
       general_liability: 2000000,
       workers_comp: 1000000,
@@ -50,6 +52,8 @@ const sampleSubcontractors = [
     service_specialization: 'Event Security',
     status: 'Active',
     vetting_status: 'Approved',
+    tier: 1,
+    client_id: 6, // Financial Services Ltd
     insurance_coverage: {
       general_liability: 3000000,
       workers_comp: 1500000,
@@ -80,6 +84,8 @@ const sampleSubcontractors = [
     service_specialization: 'Healthcare Security',
     status: 'Active',
     vetting_status: 'Approved',
+    tier: 2,
+    client_id: 3, // Metro Healthcare Systems
     insurance_coverage: {
       general_liability: 2500000,
       workers_comp: 1200000,
@@ -110,6 +116,8 @@ const sampleSubcontractors = [
     service_specialization: 'Retail Security',
     status: 'Active',
     vetting_status: 'Approved',
+    tier: 2,
+    client_id: 4, // Premier Retail Group
     insurance_coverage: {
       general_liability: 1500000,
       workers_comp: 800000,
@@ -140,6 +148,8 @@ const sampleSubcontractors = [
     service_specialization: 'Industrial Security',
     status: 'Active',
     vetting_status: 'Approved',
+    tier: 3,
+    client_id: 2, // Global Manufacturing Inc
     insurance_coverage: {
       general_liability: 5000000,
       workers_comp: 2000000,
@@ -170,6 +180,8 @@ const sampleSubcontractors = [
     service_specialization: 'General Security',
     status: 'Pending Review',
     vetting_status: 'In Progress',
+    tier: 3,
+    client_id: 5, // Energy Solutions Corp
     insurance_coverage: {
       general_liability: 1000000,
       workers_comp: 500000
@@ -189,48 +201,48 @@ const sampleSubcontractors = [
     performance_rating: 0.0,
     total_incidents: 0,
     resolved_incidents: 0,
-    notes: 'New subcontractor under review process.'
+          notes: 'New security company under review process.'
   }
 ];
 
-async function setupSubcontractors() {
-  console.log('🚀 Setting up subcontractor data...');
+async function setupSecurityCompanies() {
+  console.log('🚀 Setting up security company data...');
 
   try {
-    // Check if subcontractors already exist
-    const { data: existingSubcontractors, error: checkError } = await supabase
+    // Check if security companies already exist
+    const { data: existingSecurityCompanies, error: checkError } = await supabase
       .from('subcontractor_profiles')
       .select('id')
       .limit(1);
 
     if (checkError) {
-      console.error('❌ Error checking existing subcontractors:', checkError);
+      console.error('❌ Error checking existing security companies:', checkError);
       return;
     }
 
-    if (existingSubcontractors && existingSubcontractors.length > 0) {
-      console.log('⚠️  Subcontractors already exist. Skipping initialization.');
+    if (existingSecurityCompanies && existingSecurityCompanies.length > 0) {
+      console.log('⚠️  Security companies already exist. Skipping initialization.');
       return;
     }
 
-    // Insert sample subcontractors
+    // Insert sample security companies
     const { data, error } = await supabase
       .from('subcontractor_profiles')
-      .insert(sampleSubcontractors)
+      .insert(sampleSecurityCompanies)
       .select();
 
     if (error) {
-      console.error('❌ Error inserting subcontractors:', error);
+      console.error('❌ Error inserting security companies:', error);
       return;
     }
 
-    console.log(`✅ Successfully created ${data.length} subcontractors:`);
+    console.log(`✅ Successfully created ${data.length} security companies:`);
     data.forEach(sc => {
       console.log(`   - ${sc.company_name} (${sc.service_specialization})`);
     });
 
-    console.log('\n📊 Subcontractor Statistics:');
-    console.log(`   Total Subcontractors: ${data.length}`);
+    console.log('\n📊 Security Company Statistics:');
+    console.log(`   Total Security Companies: ${data.length}`);
     console.log(`   Active: ${data.filter(sc => sc.status === 'Active').length}`);
     console.log(`   Pending Review: ${data.filter(sc => sc.status === 'Pending Review').length}`);
     console.log(`   Approved Vetting: ${data.filter(sc => sc.vetting_status === 'Approved').length}`);
@@ -241,9 +253,9 @@ async function setupSubcontractors() {
 }
 
 // Run the setup
-setupSubcontractors()
+setupSecurityCompanies()
   .then(() => {
-    console.log('\n🎉 Subcontractor setup complete!');
+    console.log('\n🎉 Security company setup complete!');
     process.exit(0);
   })
   .catch((error) => {

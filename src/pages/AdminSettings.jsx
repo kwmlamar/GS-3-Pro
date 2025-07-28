@@ -19,7 +19,7 @@ const AdminSettings = () => {
   const settingDefinitions = [
     { key: 'default_incident_distribution_high_severity', label: 'High Severity Incident Distribution', type: 'json', description: 'JSON defining levels (e.g., ["national"]) and roles (e.g., ["executive"]) for high severity incident report distribution.', icon: BellRing, category: 'Distribution' },
     { key: 'default_violation_distribution_critical', label: 'Critical Violation Distribution', type: 'json', description: 'JSON defining distribution for critical violations.', icon: BellRing, category: 'Distribution' },
-    { key: 'allow_subcontractor_data_sharing', label: 'Allow Subcontractor Data Sharing with Client', type: 'boolean', description: 'If enabled, clients can view relevant data from assigned subcontractors.', icon: Users, category: 'Access Control' },
+    { key: 'allow_security_company_data_sharing', label: 'Allow Security Company Data Sharing with Client', type: 'boolean', description: 'If enabled, clients can view relevant data from assigned security companies.', icon: Users, category: 'Access Control' },
     { key: 'max_incident_attachment_size_mb', label: 'Max Incident Attachment Size (MB)', type: 'number', description: 'Maximum file size in MB for attachments to incident reports.', icon: Shield, category: 'System' },
     { key: 'auto_archive_reports_days', label: 'Auto-Archive Reports After (Days)', type: 'number', description: 'Number of days after which completed reports are auto-archived. 0 to disable.', icon: Save, category: 'System' },
     { key: 'api_key_external_integrations', label: 'External Integrations API Key', type: 'text', description: 'API Key for secure communication with external partner applications.', icon: Key, category: 'Integrations' }

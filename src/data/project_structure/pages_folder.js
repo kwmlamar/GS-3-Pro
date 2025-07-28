@@ -13,7 +13,7 @@ const NFCManagement_jsx = { name: "NFCManagement.jsx", type: "file", content: `/
 const Reports_jsx = { name: "Reports.jsx", type: "file", content: `// Content of Reports.jsx` };
 const Scheduling_jsx = { name: "Scheduling.jsx", type: "file", content: `// Content of Scheduling.jsx` };
 const Sites_jsx = { name: "Sites.jsx", type: "file", content: `// Content of Sites.jsx` };
-const Subcontractors_jsx = { name: "Subcontractors.jsx", type: "file", content: `// Content of Subcontractors.jsx` };
+const SecurityCompanies_jsx = { name: "SecurityCompanies.jsx", type: "file", content: `// Content of SecurityCompanies.jsx` };
 const Training_jsx = { name: "Training.jsx", type: "file", content: `// Content of Training.jsx` };
 
 const reportsFolder = {
@@ -46,7 +46,7 @@ export const pagesFolder = {
         Reports_jsx,
         Scheduling_jsx,
         Sites_jsx,
-        Subcontractors_jsx,
+        SecurityCompanies_jsx,
         Training_jsx,
         reportsFolder
     ]

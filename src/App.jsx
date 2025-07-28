@@ -9,7 +9,7 @@ import Sites from '@/pages/Sites';
 import Employees from '@/pages/Employees';
 import EntityStaff from '@/pages/EntityStaff';
 import SecurityStaff from '@/pages/SecurityStaff';
-import Subcontractors from '@/pages/Subcontractors';
+import SecurityCompanies from '@/pages/SecurityCompanies';
 import Training from '@/pages/Training';
 import LiveClasses from '@/pages/LiveClasses';
 import NFCManagement from '@/pages/NFCManagement';
@@ -140,7 +140,7 @@ function App() {
               <Route path="chain-of-command" element={<ChainOfCommand />} />
               <Route path="entity-staff" element={<EntityStaff />} />
               <Route path="performance" element={<PerformancePage />} />
-              <Route path="subcontractors" element={<Subcontractors />} />
+              <Route path="security-companies" element={<SecurityCompanies />} />
               <Route path="training" element={<Training />} />
               <Route path="live-classes" element={<LiveClasses />} />
               <Route path="nfc" element={<NFCManagement />} />

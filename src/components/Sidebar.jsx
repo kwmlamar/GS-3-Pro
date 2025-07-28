@@ -21,7 +21,7 @@ const navItems = [
   { icon: Nfc, label: 'NFC/GPS Tags', path: '/nfc', roles: [...supervisorAndAbove, 'hybrid_employee'] },
   { icon: CalendarDays, label: 'Scheduling', path: '/scheduling', roles: supervisorAndAbove },
   { icon: ShieldCheck, label: 'Assessments', path: '/assessments', roles: supervisorAndAbove },
-  { icon: Briefcase, label: 'Security Companies', path: '/subcontractors', roles: operationsAndAdmin },
+  { icon: Briefcase, label: 'Security Companies', path: '/security-companies', roles: operationsAndAdmin },
   { icon: Users, label: 'Security Staff', path: '/employees', roles: supervisorAndAbove },
   { icon: Building2, label: 'Entity Staff', path: '/entity-staff', roles: supervisorAndAbove },
   { icon: UserCheck, label: 'Performance', path: '/performance', roles: supervisorAndAbove },

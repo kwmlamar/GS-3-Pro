@@ -7,7 +7,7 @@ import Dashboard from '@/pages/Dashboard';
 import Assessments from '@/pages/Assessments';
 import Sites from '@/pages/Sites';
 import Employees from '@/pages/Employees';
-import Subcontractors from '@/pages/Subcontractors';
+import SecurityCompanies from '@/pages/SecurityCompanies';
 import Training from '@/pages/Training';
 import LiveClasses from '@/pages/LiveClasses';
 import NFCManagement from '@/pages/NFCManagement';
@@ -132,7 +132,7 @@ function App() {
               <Route path="sites" element={<Sites />} />
               <Route path="employees" element={<Employees />} />
               <Route path="performance" element={<PerformancePage />} />
-              <Route path="subcontractors" element={<Subcontractors />} />
+              <Route path="security-companies" element={<SecurityCompanies />} />
               <Route path="training" element={<Training />} />
               <Route path="live-classes" element={<LiveClasses />} />
               <Route path="nfc" element={<NFCManagement />} />
