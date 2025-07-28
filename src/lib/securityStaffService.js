@@ -37,39 +37,8 @@ export const SECURITY_STAFF_TYPES = {
 // Create security staff
 export const createSecurityStaff = async (securityStaffData) => {
   try {
-    // Handle security company - if company name is provided, find or create the company
-    let finalSecurityStaffData = { ...securityStaffData };
-    
-    if (securityStaffData.security_company && !securityStaffData.security_company_id) {
-      // Try to find existing security company
-      const { data: existingCompany } = await supabase
-        .from('subcontractor_profiles')
-        .select('id')
-        .eq('company_name', securityStaffData.security_company)
-        .eq('status', 'Active')
-        .single();
-
-      if (existingCompany) {
-        finalSecurityStaffData.security_company_id = existingCompany.id;
-      } else {
-        // Create new security company
-        const { data: newCompany, error: companyError } = await supabase
-          .from('subcontractor_profiles')
-          .insert([{
-            company_name: securityStaffData.security_company,
-            service_specialization: 'Security Services',
-            status: 'Active'
-          }])
-          .select()
-          .single();
-
-        if (companyError) throw companyError;
-        finalSecurityStaffData.security_company_id = newCompany.id;
-      }
-    }
-
     // Handle entities - extract entity IDs and remove from security staff data
-    const { security_company, entities, ...dataToSave } = finalSecurityStaffData;
+    const { entities, ...dataToSave } = securityStaffData;
 
     const { data, error } = await supabase
       .from('security_staff')
@@ -132,7 +101,7 @@ export const getSecurityStaff = async () => {
       throw error;
     }
 
-    // Fetch security staff entities for each security staff member
+    // Add name field and fetch security staff entities for each security staff member
     const securityStaffWithEntities = await Promise.all(
       data.map(async (securityStaff) => {
         const { data: entities } = await supabase
@@ -146,8 +115,11 @@ export const getSecurityStaff = async () => {
 
         return {
           ...securityStaff,
+          name: `${securityStaff.first_name} ${securityStaff.last_name}`,
+          role: securityStaff.position,
+          type: securityStaff.position, // Use position as type for now
           entities: entities || [],
-          primaryEntity: entities?.find(e => e.is_primary)?.sites?.name || securityStaff.site || 'No entity assigned'
+          primaryEntity: entities?.find(e => e.is_primary)?.sites?.name || 'No entity assigned'
         };
       })
     );
@@ -182,39 +154,8 @@ export const getSecurityStaffById = async (id) => {
 // Update security staff
 export const updateSecurityStaff = async (id, updates) => {
   try {
-    // Handle security company - if company name is provided, find or create the company
-    let finalUpdates = { ...updates };
-    
-    if (updates.security_company && !updates.security_company_id) {
-      // Try to find existing security company
-      const { data: existingCompany } = await supabase
-        .from('subcontractor_profiles')
-        .select('id')
-        .eq('company_name', updates.security_company)
-        .eq('status', 'Active')
-        .single();
-
-      if (existingCompany) {
-        finalUpdates.security_company_id = existingCompany.id;
-      } else {
-        // Create new security company
-        const { data: newCompany, error: companyError } = await supabase
-          .from('subcontractor_profiles')
-          .insert([{
-            company_name: updates.security_company,
-            service_specialization: 'Security Services',
-            status: 'Active'
-          }])
-          .select()
-          .single();
-
-        if (companyError) throw companyError;
-        finalUpdates.security_company_id = newCompany.id;
-      }
-    }
-
     // Handle entities - extract entity IDs and remove from security staff data
-    const { security_company, entities, ...dataToUpdate } = finalUpdates;
+    const { entities, ...dataToUpdate } = updates;
 
     const { data, error } = await supabase
       .from('security_staff')

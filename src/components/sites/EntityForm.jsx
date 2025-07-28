@@ -8,12 +8,17 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/components/ui/use-toast';
 import { supabase } from '@/lib/supabaseClient';
+import { getClients, createClient } from '@/lib/clientService';
 import { Save, ArrowLeft } from 'lucide-react';
 import { siteTypes, iosInputStyle, iosButtonStyle } from '@/pages/Sites';
 
 const EntityForm = ({ isEditing, currentSite, clients, allSitesForParent, onSuccess, onCancel }) => {
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
+  const [clientsList, setClientsList] = useState([]);
+  const [clientsLoading, setClientsLoading] = useState(true);
+  const [showNewClientInput, setShowNewClientInput] = useState(false);
+  const [newClient, setNewClient] = useState('');
   const [formData, setFormData] = useState({
     name: '',
     type: '',
@@ -22,6 +27,28 @@ const EntityForm = ({ isEditing, currentSite, clients, allSitesForParent, onSucc
     address: '{}',
     gps_coordinates: '{}',
   });
+
+  useEffect(() => {
+    // Load clients
+    const loadClients = async () => {
+      try {
+        const { data, error } = await getClients();
+        if (error) throw error;
+        setClientsList(data || []);
+      } catch (error) {
+        console.error('Error loading clients:', error);
+        toast({
+          title: "Error",
+          description: "Failed to load clients.",
+          variant: "destructive"
+        });
+      } finally {
+        setClientsLoading(false);
+      }
+    };
+
+    loadClients();
+  }, [toast]);
 
   useEffect(() => {
     if (isEditing && currentSite) {
@@ -48,6 +75,67 @@ const EntityForm = ({ isEditing, currentSite, clients, allSitesForParent, onSucc
       ...prev, 
       [name]: value === 'none' ? null : (name === 'parent_id' ? parseInt(value) : value)
     }));
+  };
+
+  const handleClientChange = (value) => {
+    if (value === 'add_new') {
+      setShowNewClientInput(true);
+      setNewClient('');
+    } else {
+      setShowNewClientInput(false);
+      setFormData(prev => ({
+        ...prev,
+        client_id: value === 'none' ? null : parseInt(value)
+      }));
+    }
+  };
+
+  const handleNewClientSubmit = async () => {
+    if (newClient.trim()) {
+      try {
+        const { data, error } = await createClient({
+          name: newClient.trim(),
+          contact_person: '',
+          email: '',
+          phone: '',
+          industry: 'General',
+          status: 'Active',
+          address: {
+            street: '',
+            city: '',
+            state: '',
+            zip: ''
+          }
+        });
+
+        if (error) throw error;
+
+        // Add the new client to the list
+        setClientsList(prev => [...prev, data]);
+        
+        // Set the form data to use the new client
+        setFormData(prev => ({
+          ...prev,
+          client_id: data.id
+        }));
+        
+        setShowNewClientInput(false);
+        setNewClient('');
+        
+        toast({
+          title: "Client Created",
+          description: `${newClient.trim()} has been added successfully.`,
+          variant: "default"
+        });
+      } catch (error) {
+        console.error('Error creating client:', error);
+        toast({
+          title: "Error",
+          description: "Failed to create client. Please try again.",
+          variant: "destructive"
+        });
+      }
+    }
   };
 
   const validateJson = (jsonString, fieldName) => {
@@ -166,13 +254,73 @@ const EntityForm = ({ isEditing, currentSite, clients, allSitesForParent, onSucc
               </div>
               <div>
                 <Label htmlFor="client_id" className="text-gray-300">Client (Optional)</Label>
-                <Select name="client_id" value="none" onValueChange={(value) => handleSelectChange('client_id', value)} disabled>
-                  <SelectTrigger className={iosInputStyle}><SelectValue placeholder="Client selection disabled" /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="none">None</SelectItem>
-                  </SelectContent>
-                </Select>
-                <p className="text-xs text-slate-400 mt-1">Client functionality disabled until users table is created.</p>
+                {showNewClientInput ? (
+                  <div className="space-y-2">
+                    <Input
+                      value={newClient}
+                      onChange={(e) => setNewClient(e.target.value)}
+                      placeholder="Enter new client name"
+                      className={iosInputStyle}
+                      onKeyPress={(e) => {
+                        if (e.key === 'Enter') {
+                          e.preventDefault();
+                          handleNewClientSubmit();
+                        }
+                      }}
+                    />
+                    <div className="flex space-x-2">
+                      <Button
+                        type="button"
+                        size="sm"
+                        onClick={handleNewClientSubmit}
+                        className="bg-green-600 hover:bg-green-700 text-xs"
+                      >
+                        Add Client
+                      </Button>
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="outline"
+                        onClick={() => {
+                          setShowNewClientInput(false);
+                          setNewClient('');
+                        }}
+                        className="border-slate-600 text-slate-300 hover:bg-slate-700 text-xs"
+                      >
+                        Cancel
+                      </Button>
+                    </div>
+                  </div>
+                ) : (
+                  <Select 
+                    name="client_id" 
+                    value={formData.client_id ? formData.client_id.toString() : 'none'} 
+                    onValueChange={handleClientChange}
+                    disabled={clientsLoading}
+                  >
+                    <SelectTrigger className={iosInputStyle}>
+                      <SelectValue placeholder={clientsLoading ? "Loading clients..." : "Select a client or add new..."} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">None</SelectItem>
+                      {clientsLoading ? (
+                        <SelectItem value="" disabled>Loading clients...</SelectItem>
+                      ) : (
+                        <>
+                          {clientsList.map((client) => (
+                            <SelectItem key={client.id} value={client.id.toString()}>
+                              {client.name} - {client.industry}
+                            </SelectItem>
+                          ))}
+                          <SelectItem value="add_new" className="text-blue-400 font-medium">
+                            + Add New Client
+                          </SelectItem>
+                        </>
+                      )}
+                    </SelectContent>
+                  </Select>
+                )}
+                <p className="text-xs text-slate-400 mt-1">Assign this entity to a specific client or create a new one.</p>
               </div>
             </div>
             <div>

@@ -18,7 +18,7 @@ import {
   Briefcase,
   Loader2
 } from 'lucide-react';
-import EmployeeForm from '@/components/employees/EmployeeForm';
+import SecurityStaffForm from '@/components/security-staff/SecurityStaffForm';
 import EmployeeDetail from '@/components/employees/EmployeeDetail';
 import { 
   getSecurityStaff, 
@@ -475,12 +475,11 @@ const SecurityStaff = () => {
         </TabsContent>
       </Tabs>
 
-      {/* Employee Form Modal */}
+      {/* Security Staff Form Modal */}
       {showAddForm && (
-        <EmployeeForm
+        <SecurityStaffForm
           onClose={() => setShowAddForm(false)}
           onSuccess={handleEntityStaffCreated}
-          staffType="security"
         />
       )}
 
