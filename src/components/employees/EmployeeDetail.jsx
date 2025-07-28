@@ -23,6 +23,7 @@ import {
 } from 'lucide-react';
 import EmployeeForm from './EmployeeForm';
 import { updateEntityStaff } from '@/lib/entityStaffService';
+import { updateSecurityStaff } from '@/lib/securityStaffService';
 
 const EmployeeDetail = ({ employee, onClose, onUpdate, staffType = 'security' }) => {
   const [showEditForm, setShowEditForm] = useState(false);
@@ -34,7 +35,8 @@ const EmployeeDetail = ({ employee, onClose, onUpdate, staffType = 'security' })
     }
 
     try {
-      const { error } = await updateEmployee(employee.id, {
+      const updateFunction = staffType === 'entity' ? updateEntityStaff : updateSecurityStaff;
+      const { error } = await updateFunction(employee.id, {
         ...employee,
         status: 'Archived'
       });
@@ -61,7 +63,8 @@ const EmployeeDetail = ({ employee, onClose, onUpdate, staffType = 'security' })
 
   const handleRestore = async () => {
     try {
-      const { error } = await updateEmployee(employee.id, {
+      const updateFunction = staffType === 'entity' ? updateEntityStaff : updateSecurityStaff;
+      const { error } = await updateFunction(employee.id, {
         ...employee,
         status: 'Active'
       });

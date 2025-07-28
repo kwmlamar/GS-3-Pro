@@ -10,6 +10,7 @@ import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/components/ui/use-toast';
 import { X, Save, UserPlus, Edit, Shield, AlertTriangle, Building2, MapPin, Crown, Users, Star, Briefcase, GraduationCap } from 'lucide-react';
 import { createEntityStaff, updateEntityStaff, ENTITY_STAFF_TYPES, getDepartments, createDepartment, getPotentialSupervisors } from '@/lib/entityStaffService';
+import { createSecurityStaff, updateSecurityStaff, SECURITY_STAFF_TYPES } from '@/lib/securityStaffService';
 import { supabase } from '@/lib/supabaseClient';
 
 const EmployeeForm = ({ employee = null, onClose, onSuccess, staffType = 'security' }) => {
@@ -231,9 +232,13 @@ const EmployeeForm = ({ employee = null, onClose, onSuccess, staffType = 'securi
 
       let result;
       if (isEditing) {
-        result = await updateEmployee(employee.id, employeeData);
+        result = staffType === 'entity' 
+          ? await updateEntityStaff(employee.id, employeeData)
+          : await updateSecurityStaff(employee.id, employeeData);
       } else {
-        result = await createEmployee(employeeData);
+        result = staffType === 'entity'
+          ? await createEntityStaff(employeeData)
+          : await createSecurityStaff(employeeData);
       }
 
       if (result.error) {
@@ -262,7 +267,9 @@ const EmployeeForm = ({ employee = null, onClose, onSuccess, staffType = 'securi
     }
   };
 
-  const employeeTypeOptions = Object.keys(EMPLOYEE_TYPES);
+  const employeeTypeOptions = staffType === 'entity' 
+    ? Object.keys(ENTITY_STAFF_TYPES)
+    : Object.keys(SECURITY_STAFF_TYPES);
 
   return (
     <AnimatePresence>
