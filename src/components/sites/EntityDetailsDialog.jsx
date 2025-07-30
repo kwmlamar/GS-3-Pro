@@ -15,7 +15,8 @@ import {
   Calendar,
   Loader2,
   X,
-  ExternalLink
+  ExternalLink,
+  Network
 } from 'lucide-react';
 import { supabase } from '@/lib/supabaseClient';
 import { getEntityStaff } from '@/lib/entityStaffService';
@@ -34,99 +35,164 @@ const EntityDetailsDialog = ({ isOpen, onClose, entity }) => {
       console.log('🔍 Entity ID:', entity.id);
       console.log('🔍 Entity Name:', entity.name);
       console.log('🔍 Entity Type:', entity.type);
+      console.log('🔍 Entity object keys:', Object.keys(entity));
       fetchLinkedData();
+    } else {
+      console.log('Dialog not opened or entity is null:', { isOpen, entity });
     }
   }, [isOpen, entity]);
 
   const fetchLinkedData = async () => {
-    if (!entity) return;
+    if (!entity) {
+      console.log('No entity provided to fetchLinkedData');
+      return;
+    }
     
     setLoading(true);
     try {
       console.log('🔍 Fetching linked data for entity:', entity);
+      console.log('🔍 Entity ID type:', typeof entity.id);
+      console.log('🔍 Entity ID value:', entity.id);
       
-      // Method 1: Fetch entity staff linked via entity_staff_entities table
-      const { data: entityStaffData, error: entityStaffError } = await supabase
-        .from('entity_staff_entities')
-        .select(`
-          entity_staff_id,
-          is_primary,
-          entity_staff (
-            id,
-            name,
-            email,
-            phone,
-            position,
-            department_id,
-            departments (name)
-          )
-        `)
-        .eq('site_id', entity.id);
+      // Test database connection first
+      try {
+        const { data: testData, error: testError } = await supabase
+          .from('sites')
+          .select('id, name')
+          .limit(1);
+        
+        console.log('🔍 Database connection test:', { testData, testError });
+      } catch (error) {
+        console.error('🔍 Database connection failed:', error);
+      }
+      
+      // Method 1: Try to fetch entity staff linked via entity_staff_entities table
+      let entityStaffData = [];
+      let entityStaffError = null;
+      
+      try {
+        const { data, error } = await supabase
+          .from('entity_staff_entities')
+          .select(`
+            entity_staff_id,
+            is_primary,
+            status,
+            entity_staff (
+              id,
+              name,
+              email,
+              phone,
+              role,
+              department_id,
+              departments (name)
+            )
+          `)
+          .eq('site_id', entity.id);
+        
+        entityStaffData = data || [];
+        entityStaffError = error;
+      } catch (error) {
+        console.log('Entity staff entities table not available, trying direct entity_staff table');
+        entityStaffError = error;
+      }
 
       console.log('📊 Entity staff data (via relationships):', entityStaffData);
       console.log('❌ Entity staff error (via relationships):', entityStaffError);
 
-      // Method 2: Fetch entity staff linked via site column (legacy) - TEMPORARILY DISABLED
-      /*
-      const { data: entityStaffLegacyData, error: entityStaffLegacyError } = await supabase
-        .from('entity_staff')
-        .select(`
-          id,
-          first_name,
-          last_name,
-          email,
-          phone,
-          position,
-          department_id,
-          departments (name)
-        `)
-        .eq('site', entity.name);
+      // Method 2: Fetch entity staff linked via site column (fallback)
+      let entityStaffLegacyData = [];
+      let entityStaffLegacyError = null;
+      
+      try {
+        const { data, error } = await supabase
+          .from('entity_staff')
+          .select(`
+            id,
+            name,
+            email,
+            phone,
+            role,
+            department_id,
+            departments (name)
+          `)
+          .eq('site', entity.name);
+        
+        entityStaffLegacyData = data || [];
+        entityStaffLegacyError = error;
+      } catch (error) {
+        console.log('Entity staff site column not available, using junction table only');
+        entityStaffLegacyError = error;
+      }
 
       console.log('📊 Entity staff data (via site column):', entityStaffLegacyData);
       console.log('❌ Entity staff error (via site column):', entityStaffLegacyError);
-      */
 
-      // Combine both results - for now, only use relationships
+      // Combine both results
       const combinedEntityStaff = [
         ...(entityStaffData || []).map(item => ({
           ...item,
-          source: 'relationship'
+          source: 'relationship',
+          entity_staff: item.entity_staff || {}
+        })),
+        ...(entityStaffLegacyData || []).map(item => ({
+          entity_staff_id: item.id,
+          is_primary: true,
+          entity_staff: item,
+          source: 'legacy'
         }))
-        // ...(entityStaffLegacyData || []).map(item => ({
-        //   entity_staff_id: item.id,
-        //   is_primary: true,
-        //   entity_staff: item,
-        //   source: 'legacy'
-        // }))
       ];
 
       console.log('✅ Combined entity staff:', combinedEntityStaff);
       setEntityStaff(combinedEntityStaff);
 
       // Fetch security staff linked to this site
-      const { data: securityStaffData, error: securityStaffError } = await supabase
-        .from('security_staff_entities')
-        .select(`
-          security_staff_id,
-          is_primary,
-          security_staff (
-            id,
-            name,
-            email,
-            phone,
-            position
-          )
-        `)
-        .eq('site_id', entity.id);
+      let securityStaffData = [];
+      let securityStaffError = null;
+      
+      try {
+        const { data, error } = await supabase
+          .from('security_staff_entities')
+          .select(`
+            security_staff_id,
+            is_primary,
+            status,
+            security_staff (
+              id,
+              first_name,
+              last_name,
+              email,
+              phone,
+              position,
+              security_company_id,
+              subcontractor_profiles (company_name)
+            )
+          `)
+          .eq('site_id', entity.id);
+        
+        securityStaffData = data || [];
+        securityStaffError = error;
+      } catch (error) {
+        console.log('Security staff entities table not available, trying direct security_staff table');
+        securityStaffError = error;
+      }
 
       console.log('📊 Security staff data:', securityStaffData);
       console.log('❌ Security staff error:', securityStaffError);
 
-      // Combine both results
+      // Note: Security staff are linked through security_staff_entities table only
+      // No direct site column exists in security_staff table
+      let securityStaffLegacyData = [];
+      let securityStaffLegacyError = null;
+      
+      console.log('📊 Security staff data (via site column): No direct site column available');
+      console.log('❌ Security staff error (via site column): Using junction table only');
+
+      // Combine both results (security staff only uses junction table)
       const combinedSecurityStaff = [
         ...(securityStaffData || []).map(item => ({
           ...item,
-          source: 'relationship'
+          source: 'relationship',
+          security_staff: item.security_staff || {}
         }))
       ];
 
@@ -137,6 +203,13 @@ const EntityDetailsDialog = ({ isOpen, onClose, entity }) => {
       console.log('🎯 Final state - Security staff count:', combinedSecurityStaff.length);
       console.log('🎯 Final state - Entity staff data:', combinedEntityStaff);
       console.log('🎯 Final state - Security staff data:', combinedSecurityStaff);
+      
+      // Log the results for debugging
+      if (combinedEntityStaff.length === 0 && combinedSecurityStaff.length === 0) {
+        console.log('No staff data found for this entity - this is normal for new entities');
+      } else {
+        console.log('Staff data loaded successfully');
+      }
       
     } catch (error) {
       console.error('Error fetching linked data:', error);
@@ -169,9 +242,11 @@ const EntityDetailsDialog = ({ isOpen, onClose, entity }) => {
     return 'Address available';
   };
 
-  if (!entity) return null;
+  if (!entity || !isOpen) return null;
 
-  return (
+  // Add error boundary
+  try {
+    return (
     <AnimatePresence>
       {isOpen && (
         <motion.div
@@ -210,7 +285,7 @@ const EntityDetailsDialog = ({ isOpen, onClose, entity }) => {
                   </div>
                 ) : (
                   <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-                    <TabsList className="grid w-full grid-cols-4 bg-slate-800/80 border border-slate-700">
+                    <TabsList className="grid w-full grid-cols-5 bg-slate-800/80 border border-slate-700">
                       <TabsTrigger value="overview" className="data-[state=active]:bg-slate-700 data-[state=active]:text-white text-slate-300">
                         Overview
                       </TabsTrigger>
@@ -219,6 +294,9 @@ const EntityDetailsDialog = ({ isOpen, onClose, entity }) => {
                       </TabsTrigger>
                       <TabsTrigger value="security_staff" className="data-[state=active]:bg-slate-700 data-[state=active]:text-white text-slate-300">
                         Security Staff ({securityStaff.length})
+                      </TabsTrigger>
+                      <TabsTrigger value="relationships" className="data-[state=active]:bg-slate-700 data-[state=active]:text-white text-slate-300">
+                        Relationships
                       </TabsTrigger>
                       <TabsTrigger value="hierarchy" className="data-[state=active]:bg-slate-700 data-[state=active]:text-white text-slate-300">
                         Hierarchy
@@ -295,14 +373,18 @@ const EntityDetailsDialog = ({ isOpen, onClose, entity }) => {
                           ) : (
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                               {entityStaff.map((item) => {
-                                const staff = item.entity_staff;
+                                const staff = item.entity_staff || {};
                                 console.log('🎨 Rendering entity staff item:', item);
+                                if (!staff || !staff.name) {
+                                  console.warn('Invalid entity staff data:', item);
+                                  return null;
+                                }
                                 return (
                                   <Card key={item.entity_staff_id} className="bg-slate-700/50 border-slate-600">
                                     <CardHeader>
                                       <div className="flex items-center justify-between">
                                         <CardTitle className="text-md text-white">
-                                          {staff.name}
+                                          {staff.name || 'Unknown Staff'}
                                         </CardTitle>
                                         <div className="flex items-center gap-2">
                                           {item.is_primary && (
@@ -327,12 +409,23 @@ const EntityDetailsDialog = ({ isOpen, onClose, entity }) => {
                                       )}
                                       <div className="flex items-center text-sm">
                                         <Shield className="w-4 h-4 mr-2 text-gray-400" />
-                                        <span className="text-gray-300">{staff.position}</span>
+                                        <span className="text-gray-300">{staff.role || staff.position || 'No role'}</span>
                                       </div>
                                       {staff.departments && (
                                         <div className="flex items-center text-sm">
                                           <Building2 className="w-4 h-4 mr-2 text-gray-400" />
                                           <span className="text-gray-300">{staff.departments.name}</span>
+                                        </div>
+                                      )}
+                                      <div className="flex items-center text-sm">
+                                        <Calendar className="w-4 h-4 mr-2 text-gray-400" />
+                                        <span className="text-gray-300">Assignment dates not available</span>
+                                      </div>
+                                      {item.status && (
+                                        <div className="flex items-center text-sm">
+                                          <Badge variant={item.status === 'Active' ? 'default' : 'secondary'} className="text-xs">
+                                            {item.status}
+                                          </Badge>
                                         </div>
                                       )}
                                     </CardContent>
@@ -364,13 +457,17 @@ const EntityDetailsDialog = ({ isOpen, onClose, entity }) => {
                           ) : (
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                               {securityStaff.map((item) => {
-                                const staff = item.security_staff;
+                                const staff = item.security_staff || {};
+                                if (!staff || !staff.name) {
+                                  console.warn('Invalid security staff data:', item);
+                                  return null;
+                                }
                                 return (
                                   <Card key={item.security_staff_id} className="bg-slate-700/50 border-slate-600">
                                     <CardHeader>
                                       <div className="flex items-center justify-between">
                                         <CardTitle className="text-md text-white">
-                                          {staff.name}
+                                          {staff.first_name && staff.last_name ? `${staff.first_name} ${staff.last_name}` : staff.first_name || staff.last_name || 'Unknown Staff'}
                                         </CardTitle>
                                         <div className="flex items-center gap-2">
                                           {item.is_primary && (
@@ -395,12 +492,23 @@ const EntityDetailsDialog = ({ isOpen, onClose, entity }) => {
                                       )}
                                       <div className="flex items-center text-sm">
                                         <Shield className="w-4 h-4 mr-2 text-gray-400" />
-                                        <span className="text-gray-300">{staff.position}</span>
+                                        <span className="text-gray-300">{staff.position || 'No position'}</span>
                                       </div>
-                                      {staff.security_companies && (
+                                      {staff.subcontractor_profiles && (
                                         <div className="flex items-center text-sm">
                                           <Building2 className="w-4 h-4 mr-2 text-gray-400" />
-                                          <span className="text-gray-300">{staff.security_companies.name}</span>
+                                          <span className="text-gray-300">{staff.subcontractor_profiles.company_name}</span>
+                                        </div>
+                                      )}
+                                      <div className="flex items-center text-sm">
+                                        <Calendar className="w-4 h-4 mr-2 text-gray-400" />
+                                        <span className="text-gray-300">Assignment dates not available</span>
+                                      </div>
+                                      {item.status && (
+                                        <div className="flex items-center text-sm">
+                                          <Badge variant={item.status === 'Active' ? 'default' : 'secondary'} className="text-xs">
+                                            {item.status}
+                                          </Badge>
                                         </div>
                                       )}
                                     </CardContent>
@@ -409,6 +517,54 @@ const EntityDetailsDialog = ({ isOpen, onClose, entity }) => {
                               })}
                             </div>
                           )}
+                        </CardContent>
+                      </Card>
+                    </TabsContent>
+
+                    <TabsContent value="relationships" className="mt-4">
+                      <Card className="bg-slate-800/50 border-slate-700">
+                        <CardHeader>
+                          <CardTitle className="text-lg text-white flex items-center">
+                            <Network className="w-5 h-5 mr-2 text-blue-400" />
+                            Site Relationships
+                          </CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                          <div className="space-y-4">
+                            <div>
+                              <label className="text-sm text-gray-400">Entity Staff Relationships</label>
+                              <p className="text-white">
+                                This entity has {entityStaff.length} entity staff members assigned through the entity_staff_entities table.
+                              </p>
+                              {entityStaff.length > 0 && (
+                                <div className="mt-2">
+                                  <p className="text-sm text-gray-400">Primary assignments: {entityStaff.filter(s => s.is_primary).length}</p>
+                                  <p className="text-sm text-gray-400">Active assignments: {entityStaff.filter(s => s.status === 'Active').length}</p>
+                                </div>
+                              )}
+                            </div>
+                            <div>
+                              <label className="text-sm text-gray-400">Security Staff Relationships</label>
+                              <p className="text-white">
+                                This entity has {securityStaff.length} security staff members assigned through the security_staff_entities table.
+                              </p>
+                              {securityStaff.length > 0 && (
+                                <div className="mt-2">
+                                  <p className="text-sm text-gray-400">Primary assignments: {securityStaff.filter(s => s.is_primary).length}</p>
+                                  <p className="text-sm text-gray-400">Active assignments: {securityStaff.filter(s => s.status === 'Active').length}</p>
+                                </div>
+                              )}
+                            </div>
+                            <div>
+                              <label className="text-sm text-gray-400">Database Tables Used</label>
+                              <div className="space-y-1 mt-2">
+                                <p className="text-sm text-gray-300">• entity_staff_entities (junction table)</p>
+                                <p className="text-sm text-gray-300">• security_staff_entities (junction table)</p>
+                                <p className="text-sm text-gray-300">• entity_staff (staff details)</p>
+                                <p className="text-sm text-gray-300">• security_staff (security staff details)</p>
+                              </div>
+                            </div>
+                          </div>
                         </CardContent>
                       </Card>
                     </TabsContent>
@@ -437,6 +593,16 @@ const EntityDetailsDialog = ({ isOpen, onClose, entity }) => {
                               <label className="text-sm text-gray-400">Entity ID</label>
                               <p className="text-white font-mono text-sm">{entity.id}</p>
                             </div>
+                            <div>
+                              <label className="text-sm text-gray-400">Address</label>
+                              <p className="text-white">{formatAddress(entity.address)}</p>
+                            </div>
+                            {entity.gps_coordinates && (
+                              <div>
+                                <label className="text-sm text-gray-400">GPS Coordinates</label>
+                                <p className="text-white font-mono text-sm">{JSON.stringify(entity.gps_coordinates)}</p>
+                              </div>
+                            )}
                           </div>
                         </CardContent>
                       </Card>
@@ -448,8 +614,42 @@ const EntityDetailsDialog = ({ isOpen, onClose, entity }) => {
           </motion.div>
         </motion.div>
       )}
-    </AnimatePresence>
-  );
-};
+          </AnimatePresence>
+    );
+  } catch (error) {
+    console.error('Error rendering EntityDetailsDialog:', error);
+    return (
+      <AnimatePresence>
+        {isOpen && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+            onClick={onClose}
+          >
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              className="w-full max-w-4xl max-h-[90vh] overflow-y-auto"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <Card className="ios-card">
+                <CardHeader>
+                  <CardTitle className="text-xl text-white">Error Loading Entity Details</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-gray-400">There was an error loading the entity details. Please try again.</p>
+                  <Button onClick={onClose} className="mt-4">Close</Button>
+                </CardContent>
+              </Card>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    );
+  }
+  };
 
 export default EntityDetailsDialog; 

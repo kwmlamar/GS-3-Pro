@@ -37,7 +37,7 @@ const Sites = () => {
   
   // Debug the search term
   console.log('🔍 Search term state:', searchTerm);
-  const [activeTab, setActiveTab] = useState('hierarchy_view');
+  const [activeTab, setActiveTab] = useState('sites_list');
   const [selectedParentForDashboard, setSelectedParentForDashboard] = useState(null);
   const [selectedEntity, setSelectedEntity] = useState(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
