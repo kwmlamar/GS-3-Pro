@@ -9,6 +9,9 @@ import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/components/ui/use-toast';
 import { X, Save, FileText, Edit, Plus } from 'lucide-react';
 import { reportsService, generateDocNumber } from '@/lib/reportsService';
+import { getEntityStaff } from '@/lib/entityStaffService';
+import { getSecurityStaff } from '@/lib/securityStaffService';
+import { supabase } from '@/lib/supabaseClient';
 
 const REPORT_TYPES = [
   'Incident',
@@ -31,8 +34,9 @@ const ReportForm = ({ report = null, onClose, onSuccess }) => {
     title: '',
     report_type: '',
     doc_number: '',
-    site_name: '',
-    officer_name: '',
+    site_id: null,
+    entity_officer_id: null,
+    security_officer_id: null,
     report_date: new Date().toISOString().split('T')[0],
     status: 'Draft',
     priority: 'Medium',
@@ -42,9 +46,56 @@ const ReportForm = ({ report = null, onClose, onSuccess }) => {
     attachments: []
   });
   const [loading, setLoading] = useState(false);
+  const [entityStaff, setEntityStaff] = useState([]);
+  const [securityStaff, setSecurityStaff] = useState([]);
+  const [entities, setEntities] = useState([]);
+  const [loadingStaff, setLoadingStaff] = useState(true);
   const { toast } = useToast();
 
   const isEditing = !!report;
+
+  // Fetch entity staff, security staff, and entities data
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        setLoadingStaff(true);
+        const [entityStaffResult, securityStaffResult, entitiesResult] = await Promise.all([
+          getEntityStaff(),
+          getSecurityStaff(),
+          supabase.from('sites').select('id, name, type').order('name')
+        ]);
+
+        if (entityStaffResult.error) {
+          console.error('Error fetching entity staff:', entityStaffResult.error);
+        } else {
+          setEntityStaff(entityStaffResult.data || []);
+        }
+
+        if (securityStaffResult.error) {
+          console.error('Error fetching security staff:', securityStaffResult.error);
+        } else {
+          setSecurityStaff(securityStaffResult.data || []);
+        }
+
+        if (entitiesResult.error) {
+          console.error('Error fetching entities:', entitiesResult.error);
+        } else {
+          setEntities(entitiesResult.data || []);
+        }
+      } catch (error) {
+        console.error('Error fetching data:', error);
+        toast({
+          title: "Error",
+          description: "Failed to load form data. Please try again.",
+          variant: "destructive"
+        });
+      } finally {
+        setLoadingStaff(false);
+      }
+    };
+
+    fetchData();
+  }, [toast]);
 
   useEffect(() => {
     if (report) {
@@ -52,8 +103,10 @@ const ReportForm = ({ report = null, onClose, onSuccess }) => {
         title: report.title || '',
         report_type: report.report_type || '',
         doc_number: report.doc_number || '',
+        site_id: report.site_id || null,
         site_name: report.site_name || '',
-        officer_name: report.officer_name || '',
+        entity_officer_id: report.entity_officer_id || null,
+        security_officer_id: report.security_officer_id || null,
         report_date: report.report_date || new Date().toISOString().split('T')[0],
         status: report.status || 'Draft',
         priority: report.priority || 'Medium',
@@ -76,6 +129,17 @@ const ReportForm = ({ report = null, onClose, onSuccess }) => {
     setFormData(prev => ({
       ...prev,
       [field]: value
+    }));
+  };
+
+  const handleEntityChange = (value) => {
+    const siteId = value ? parseInt(value) : null;
+    const selectedSite = entities.find(site => site.id === siteId);
+    
+    setFormData(prev => ({
+      ...prev,
+      site_id: siteId,
+      site_name: selectedSite?.name || '' // Auto-populate site_name from site selection
     }));
   };
 
@@ -216,27 +280,66 @@ const ReportForm = ({ report = null, onClose, onSuccess }) => {
                     </div>
 
                     <div className="space-y-2">
-                      <Label htmlFor="site_name" className="text-white">Site/Location</Label>
-                      <Input
-                        id="site_name"
-                        value={formData.site_name}
-                        onChange={(e) => handleInputChange('site_name', e.target.value)}
-                        placeholder="Corporate HQ Alpha"
-                        className="bg-slate-700/50 border-slate-600 text-white"
-                        required
-                      />
+                      <Label htmlFor="site_id" className="text-white">Entity</Label>
+                      <Select 
+                        value={formData.site_id?.toString() || ''} 
+                        onValueChange={handleEntityChange}
+                        disabled={loadingStaff}
+                      >
+                        <SelectTrigger className="bg-slate-700/50 border-slate-600 text-white">
+                          <SelectValue placeholder={loadingStaff ? "Loading..." : "Select entity"} />
+                        </SelectTrigger>
+                        <SelectContent className="bg-slate-800 border-slate-600">
+                          <SelectItem value="" className="text-white">No entity selected</SelectItem>
+                          {entities.map((entity) => (
+                            <SelectItem key={entity.id} value={entity.id.toString()} className="text-white">
+                              {entity.name} ({entity.type})
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
                     </div>
 
                     <div className="space-y-2">
-                      <Label htmlFor="officer_name" className="text-white">Reporting Officer</Label>
-                      <Input
-                        id="officer_name"
-                        value={formData.officer_name}
-                        onChange={(e) => handleInputChange('officer_name', e.target.value)}
-                        placeholder="John Smith"
-                        className="bg-slate-700/50 border-slate-600 text-white"
-                        required
-                      />
+                      <Label htmlFor="entity_officer_id" className="text-white">Entity Officer</Label>
+                      <Select 
+                        value={formData.entity_officer_id?.toString() || ''} 
+                        onValueChange={(value) => handleInputChange('entity_officer_id', value ? parseInt(value) : null)}
+                        disabled={loadingStaff}
+                      >
+                        <SelectTrigger className="bg-slate-700/50 border-slate-600 text-white">
+                          <SelectValue placeholder={loadingStaff ? "Loading..." : "Select entity officer"} />
+                        </SelectTrigger>
+                        <SelectContent className="bg-slate-800 border-slate-600">
+                          <SelectItem value="" className="text-white">No entity officer assigned</SelectItem>
+                          {entityStaff.map((staff) => (
+                            <SelectItem key={staff.id} value={staff.id.toString()} className="text-white">
+                              {staff.name} - {staff.role}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="security_officer_id" className="text-white">Security Officer</Label>
+                      <Select 
+                        value={formData.security_officer_id?.toString() || ''} 
+                        onValueChange={(value) => handleInputChange('security_officer_id', value ? parseInt(value) : null)}
+                        disabled={loadingStaff}
+                      >
+                        <SelectTrigger className="bg-slate-700/50 border-slate-600 text-white">
+                          <SelectValue placeholder={loadingStaff ? "Loading..." : "Select security officer"} />
+                        </SelectTrigger>
+                        <SelectContent className="bg-slate-800 border-slate-600">
+                          <SelectItem value="" className="text-white">No security officer assigned</SelectItem>
+                          {securityStaff.map((staff) => (
+                            <SelectItem key={staff.id} value={staff.id.toString()} className="text-white">
+                              {staff.name} - {staff.role}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
                     </div>
 
                     <div className="space-y-2">

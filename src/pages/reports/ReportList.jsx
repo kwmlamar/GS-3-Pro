@@ -160,7 +160,9 @@ const ReportList = () => {
                   <div className="flex items-center space-x-4 text-sm text-gray-400">
                     <span>Site: {report.site_name}</span>
                     <span>•</span>
-                    <span>Officer: {report.officer_name}</span>
+                    <span>Entity Officer: {report.entity_officer_name}</span>
+                    <span>•</span>
+                    <span>Security Officer: {report.security_officer_name}</span>
                   </div>
                 </div>
                                   <div className="flex space-x-2">
