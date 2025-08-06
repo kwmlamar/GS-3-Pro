@@ -6,7 +6,6 @@ import Layout from '@/components/Layout';
 import Dashboard from '@/pages/Dashboard';
 import Assessments from '@/pages/Assessments';
 import Sites from '@/pages/Sites';
-import Employees from '@/pages/Employees';
 import EntityStaff from '@/pages/EntityStaff';
 import SecurityStaff from '@/pages/SecurityStaff';
 import SecurityCompanies from '@/pages/SecurityCompanies';
@@ -35,8 +34,12 @@ const LoginManagementPage = () => <div className="text-white p-5"><h1>Login Mana
 
 function App() {
   const { toast } = useToast();
-  const [userRole, setUserRole] = useState('admin'); // Temporarily set to admin for development
+  const [userRole, setUserRole] = useState('vice_president'); // Temporarily set to admin for development
   const [loadingRole, setLoadingRole] = useState(false); // Set to false since we're bypassing auth
+
+  const handleRoleChange = (newRole) => {
+    setUserRole(newRole || null);
+  };
 
   const checkUserSession = useCallback(async () => {
     try {
@@ -132,7 +135,7 @@ function App() {
         <div className="min-h-screen bg-gradient-to-br from-slate-900 to-black">
           <Routes>
             <Route path="/developer" element={<DeveloperPage />} />
-            <Route path="/" element={<Layout userRole={userRole} />}>
+            <Route path="/" element={<Layout userRole={userRole} onRoleChange={handleRoleChange} />}>
               <Route index element={<Dashboard userRole={userRole} />} />
               <Route path="assessments" element={<Assessments />} />
               <Route path="sites" element={<Sites />} />

@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { Menu, Bell, Search, User, LogOut, Settings } from 'lucide-react';
+import { Menu, Bell, Search, User, LogOut, Settings, ChevronDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
@@ -8,7 +8,7 @@ import { useToast } from '@/components/ui/use-toast';
 import { supabase } from '@/lib/supabaseClient';
 import { useNavigate, Link } from 'react-router-dom';
 
-const Header = ({ onMenuClick, userRole }) => {
+const Header = ({ onMenuClick, userRole, onRoleChange }) => {
   const { toast } = useToast();
   const navigate = useNavigate();
 
@@ -108,7 +108,27 @@ const Header = ({ onMenuClick, userRole }) => {
                 <User className="w-4 h-4" />
               </AvatarFallback>
             </Avatar>
-            {userRole && <span className="text-xs text-slate-400 hidden md:inline">{userRole.replace(/_/g, ' ').split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')}</span>}
+            
+            {/* Role Selector for Development */}
+            <div className="relative">
+              <select
+                value={userRole || ''}
+                onChange={(e) => onRoleChange && onRoleChange(e.target.value)}
+                className="bg-slate-700/50 border border-slate-600 rounded-lg px-3 py-1 text-xs text-white focus:outline-none focus:ring-2 focus:ring-blue-500 appearance-none pr-8"
+                style={{ minWidth: '120px' }}
+              >
+                <option value="">Select Role</option>
+                <option value="admin">Admin</option>
+                <option value="vice_president">Vice President</option>
+                <option value="executive">Executive</option>
+                <option value="operations_manager">Operations Manager</option>
+                <option value="consultant">Consultant</option>
+                <option value="supervisor">Supervisor</option>
+                <option value="hybrid_employee">Hybrid Employee</option>
+                <option value="client_poc">Client POC</option>
+              </select>
+              <ChevronDown className="absolute right-2 top-1/2 transform -translate-y-1/2 w-3 h-3 text-slate-400 pointer-events-none" />
+            </div>
           </div>
 
           <Button
