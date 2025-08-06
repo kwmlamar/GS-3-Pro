@@ -18,45 +18,45 @@ export const testDatabaseConnection = async () => {
     
     console.log('✅ Database connection successful');
     
-    // Test 2: Check if employees table exists
-    const { data: employeesTest, error: employeesError } = await supabase
-      .from('employees')
+    // Test 2: Check if entity_staff table exists
+    const { data: entityStaffTest, error: entityStaffError } = await supabase
+      .from('entity_staff')
       .select('count')
       .limit(1);
     
-    if (employeesError) {
-      console.error('❌ Employees table test failed:', employeesError);
+    if (entityStaffError) {
+      console.error('❌ Entity staff table test failed:', entityStaffError);
       return { 
         success: false, 
-        error: employeesError,
-        message: 'Employees table does not exist or is not accessible'
+        error: entityStaffError,
+        message: 'Entity staff table does not exist or is not accessible'
       };
     }
     
-    console.log('✅ Employees table exists and is accessible');
+    console.log('✅ Entity staff table exists and is accessible');
     
-    // Test 3: Try to get actual employee data
-    const { data: employees, error: fetchError } = await supabase
-      .from('employees')
+    // Test 3: Try to get actual entity staff data
+    const { data: entityStaff, error: fetchError } = await supabase
+      .from('entity_staff')
       .select('*')
       .limit(5);
     
     if (fetchError) {
-      console.error('❌ Employee data fetch failed:', fetchError);
+      console.error('❌ Entity staff data fetch failed:', fetchError);
       return { 
         success: false, 
         error: fetchError,
-        message: 'Cannot fetch employee data'
+        message: 'Cannot fetch entity staff data'
       };
     }
     
-    console.log('✅ Employee data fetch successful');
-    console.log('📊 Found', employees?.length || 0, 'employees');
+    console.log('✅ Entity staff data fetch successful');
+    console.log('📊 Found', entityStaff?.length || 0, 'entity staff members');
     
     return { 
       success: true, 
-      employeeCount: employees?.length || 0,
-      message: 'Database connection and employees table working correctly'
+      entityStaffCount: entityStaff?.length || 0,
+      message: 'Database connection and entity staff table working correctly'
     };
     
   } catch (error) {

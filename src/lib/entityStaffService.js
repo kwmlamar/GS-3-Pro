@@ -54,151 +54,116 @@ export const ENTITY_STAFF_TYPES = {
   }
 };
 
-// Create entity staff
+// Status options for entity staff
+export const ENTITY_STAFF_STATUSES = [
+  'Active',
+  'Inactive', 
+  'On Leave',
+  'Terminated',
+  'Archived'
+];
+
+// ============================================================================
+// CRUD OPERATIONS
+// ============================================================================
+
+/**
+ * Create a new entity staff member
+ * @param {Object} entityStaffData - The entity staff data
+ * @returns {Object} { data, error }
+ */
 export const createEntityStaff = async (entityStaffData) => {
   try {
-    // Handle department - if department name is provided, find or create the department
-    let finalEntityStaffData = { ...entityStaffData };
-    
-    if (entityStaffData.department && !entityStaffData.department_id) {
-      // Try to find existing department
-      const { data: existingDept } = await supabase
-        .from('departments')
-        .select('id')
-        .eq('name', entityStaffData.department)
-        .eq('is_active', true)
-        .single();
+    // Prepare the data for insertion
+    const dataToInsert = {
+      name: entityStaffData.name?.trim() || '',
+      role: entityStaffData.role?.trim() || '',
+      type: entityStaffData.type || 'Standard Officer',
+      site: entityStaffData.site || 'Unassigned',
+      status: entityStaffData.status || 'Active',
+      compliance: entityStaffData.compliance || 100,
+      certifications: Array.isArray(entityStaffData.certifications) 
+        ? entityStaffData.certifications 
+        : (entityStaffData.certifications ? entityStaffData.certifications.split(',').map(c => c.trim()) : []),
+      email: entityStaffData.email || null,
+      phone: entityStaffData.phone || null,
+      hire_date: entityStaffData.hire_date || new Date().toISOString().split('T')[0],
+      department_id: entityStaffData.department_id || null,
+      supervisor_id: entityStaffData.supervisor_id || null,
+      notes: entityStaffData.notes || null
+    };
 
-      if (existingDept) {
-        finalEntityStaffData.department_id = existingDept.id;
-      } else {
-        // Create new department
-        const { data: newDept, error: deptError } = await createDepartment({
-          name: entityStaffData.department,
-          description: `Department for ${entityStaffData.department}`,
-          is_active: true
-        });
-
-        if (deptError) throw deptError;
-        finalEntityStaffData.department_id = newDept.id;
-      }
+    // Validate required fields
+    if (!dataToInsert.name) {
+      throw new Error('Name is required');
+    }
+    if (!dataToInsert.role) {
+      throw new Error('Role is required');
     }
 
-    // Handle entities and supervisors - extract from entity staff data
-    const { department, entities, supervisor_ids, ...dataToSave } = finalEntityStaffData;
-
-    // Set primary supervisor (first one in the array) to supervisor_id field
-    if (supervisor_ids && supervisor_ids.length > 0) {
-      dataToSave.supervisor_id = supervisor_ids[0];
-    }
-
+    // Insert the entity staff member
     const { data, error } = await supabase
       .from('entity_staff')
-      .insert([dataToSave])
+      .insert([dataToInsert])
       .select(`
         *,
-        departments (id, name, description)
+        departments (id, name, description),
+        supervisor:entity_staff!supervisor_id (id, name, role, type)
       `)
       .single();
 
     if (error) throw error;
 
-    // If entities are provided, create entity staff-entity relationships
-    if (entities && entities.length > 0) {
-      const entityStaffEntities = entities.map((entityId, index) => ({
-        entity_staff_id: data.id,
-        site_id: entityId,
-        is_primary: index === 0 // First entity is primary
-      }));
-
-      const { error: entityError } = await supabase
-        .from('entity_staff_entities')
-        .insert(entityStaffEntities);
-
-      if (entityError) {
-        console.error('Error creating entity staff-entity relationships:', entityError);
-        // Don't fail the entire operation, just log the error
-      }
-    }
-
-    // Add supervisor_ids back to the returned data for consistency
-    const resultData = {
-      ...data,
-      supervisor_ids: supervisor_ids || []
-    };
-
-    return { data: resultData, error: null };
+    return { data, error: null };
   } catch (error) {
     console.error('Error creating entity staff:', error);
     return { data: null, error };
   }
 };
 
-// Get all entity staff
-export const getEntityStaff = async () => {
+/**
+ * Get all entity staff members
+ * @param {Object} options - Query options
+ * @returns {Object} { data, error }
+ */
+export const getEntityStaff = async (options = {}) => {
   try {
-    const { data, error } = await supabase
+    let query = supabase
       .from('entity_staff')
       .select(`
         *,
-        departments (id, name, description)
-      `)
-      .order('created_at', { ascending: false });
+        departments (id, name, description),
+        supervisor:entity_staff!supervisor_id (id, name, role, type)
+      `);
 
-    if (error) {
-      // If it's an RLS error, try to provide helpful message
-      if (error.code === '42501') {
-        console.error('RLS Policy Error: User not authenticated or missing permissions');
-        return { 
-          data: null, 
-          error: { 
-            message: 'Authentication required. Please log in or contact administrator to disable RLS for development.' 
-          } 
-        };
-      }
-      throw error;
+    // Apply filters
+    if (options.status) {
+      query = query.eq('status', options.status);
+    }
+    if (options.type) {
+      query = query.eq('type', options.type);
+    }
+    if (options.department_id) {
+      query = query.eq('department_id', options.department_id);
     }
 
-    // Fetch entity staff entities for each entity staff member
-    const entityStaffWithEntities = await Promise.all(
-      data.map(async (entityStaff) => {
-        const { data: entities } = await supabase
-          .from('entity_staff_entities')
-          .select(`
-            site_id,
-            is_primary,
-            sites (id, name, type, parent_id)
-          `)
-          .eq('entity_staff_id', entityStaff.id);
+    // Apply sorting
+    const orderBy = options.orderBy || 'created_at';
+    const orderDirection = options.orderDirection || 'desc';
+    query = query.order(orderBy, { ascending: orderDirection === 'asc' });
 
-        return {
-          ...entityStaff,
-          entities: entities || [],
-          primaryEntity: entities?.find(e => e.is_primary)?.sites?.name || entityStaff.site || 'No entity assigned'
-        };
-      })
-    );
+    // Apply pagination
+    if (options.limit) {
+      query = query.limit(options.limit);
+    }
+    if (options.offset) {
+      query = query.range(options.offset, options.offset + (options.limit || 50) - 1);
+    }
 
-    return { data: entityStaffWithEntities, error: null };
-  } catch (error) {
-    console.error('Error fetching entity staff:', error);
-    return { data: null, error };
-  }
-};
-
-// Get entity staff by ID
-export const getEntityStaffById = async (id) => {
-  try {
-    const { data, error } = await supabase
-      .from('entity_staff')
-      .select(`
-        *,
-        departments (id, name, description)
-      `)
-      .eq('id', id)
-      .single();
+    const { data, error } = await query;
 
     if (error) throw error;
+
     return { data, error: null };
   } catch (error) {
     console.error('Error fetching entity staff:', error);
@@ -206,99 +171,89 @@ export const getEntityStaffById = async (id) => {
   }
 };
 
-// Update entity staff
+/**
+ * Get entity staff member by ID
+ * @param {number} id - The entity staff ID
+ * @returns {Object} { data, error }
+ */
+export const getEntityStaffById = async (id) => {
+  try {
+    const { data, error } = await supabase
+      .from('entity_staff')
+      .select(`
+        *,
+        departments (id, name, description),
+        supervisor:entity_staff!supervisor_id (id, name, role, type)
+      `)
+      .eq('id', id)
+      .single();
+
+    if (error) throw error;
+    return { data, error: null };
+  } catch (error) {
+    console.error('Error fetching entity staff by ID:', error);
+    return { data: null, error };
+  }
+};
+
+/**
+ * Update entity staff member
+ * @param {number} id - The entity staff ID
+ * @param {Object} updates - The updates to apply
+ * @returns {Object} { data, error }
+ */
 export const updateEntityStaff = async (id, updates) => {
   try {
-    // Handle department - if department name is provided, find or create the department
-    let finalUpdates = { ...updates };
-    
-    if (updates.department && !updates.department_id) {
-      // Try to find existing department
-      const { data: existingDept } = await supabase
-        .from('departments')
-        .select('id')
-        .eq('name', updates.department)
-        .eq('is_active', true)
-        .single();
+    // Prepare the data for update
+    const dataToUpdate = {
+      name: updates.name?.trim() || undefined,
+      role: updates.role?.trim() || undefined,
+      type: updates.type || undefined,
+      site: updates.site || undefined,
+      status: updates.status || undefined,
+      compliance: updates.compliance !== undefined ? updates.compliance : undefined,
+      certifications: Array.isArray(updates.certifications) 
+        ? updates.certifications 
+        : (updates.certifications ? updates.certifications.split(',').map(c => c.trim()) : undefined),
+      email: updates.email || undefined,
+      phone: updates.phone || undefined,
+      hire_date: updates.hire_date || undefined,
+      department_id: updates.department_id || undefined,
+      supervisor_id: updates.supervisor_id || undefined,
+      notes: updates.notes || undefined
+    };
 
-      if (existingDept) {
-        finalUpdates.department_id = existingDept.id;
-      } else {
-        // Create new department
-        const { data: newDept, error: deptError } = await createDepartment({
-          name: updates.department,
-          description: `Department for ${updates.department}`,
-          is_active: true
-        });
-
-        if (deptError) throw deptError;
-        finalUpdates.department_id = newDept.id;
+    // Remove undefined values
+    Object.keys(dataToUpdate).forEach(key => {
+      if (dataToUpdate[key] === undefined) {
+        delete dataToUpdate[key];
       }
-    }
-
-    // Handle entities and supervisors - extract from entity staff data
-    const { department, entities, supervisor_ids, ...dataToSave } = finalUpdates;
-
-    // Set primary supervisor (first one in the array) to supervisor_id field
-    if (supervisor_ids && supervisor_ids.length > 0) {
-      dataToSave.supervisor_id = supervisor_ids[0];
-    } else {
-      dataToSave.supervisor_id = null;
-    }
+    });
 
     const { data, error } = await supabase
       .from('entity_staff')
-      .update(dataToSave)
+      .update(dataToUpdate)
       .eq('id', id)
       .select(`
         *,
-        departments (id, name, description)
+        departments (id, name, description),
+        supervisor:entity_staff!supervisor_id (id, name, role, type)
       `)
       .single();
 
     if (error) throw error;
-
-    // If entities are provided, update entity staff-entity relationships
-    if (entities !== undefined) {
-      // Delete existing relationships
-      await supabase
-        .from('entity_staff_entities')
-        .delete()
-        .eq('entity_staff_id', id);
-
-      // Create new relationships if entities are provided
-      if (entities && entities.length > 0) {
-        const entityStaffEntities = entities.map((entityId, index) => ({
-          entity_staff_id: id,
-          site_id: entityId,
-          is_primary: index === 0 // First entity is primary
-        }));
-
-        const { error: entityError } = await supabase
-          .from('entity_staff_entities')
-          .insert(entityStaffEntities);
-
-        if (entityError) {
-          console.error('Error updating entity staff-entity relationships:', entityError);
-          // Don't fail the entire operation, just log the error
-        }
-      }
-    }
-
-    // Add supervisor_ids back to the returned data for consistency
-    const resultData = {
-      ...data,
-      supervisor_ids: supervisor_ids || []
-    };
-
-    return { data: resultData, error: null };
+    return { data, error: null };
   } catch (error) {
     console.error('Error updating entity staff:', error);
     return { data: null, error };
   }
 };
 
-// Delete entity staff
+/**
+ * Delete entity staff member
+ * @param {number} id - The entity staff ID
+ * @returns {Object} { error }
+ */
 export const deleteEntityStaff = async (id) => {
   try {
     const { error } = await supabase
@@ -314,14 +269,36 @@ export const deleteEntityStaff = async (id) => {
   }
 };
 
-// Search entity staff
-export const searchEntityStaff = async (searchTerm) => {
+// ============================================================================
+// SEARCH AND FILTER OPERATIONS
+// ============================================================================
+
+/**
+ * Search entity staff members
+ * @param {string} searchTerm - The search term
+ * @param {Object} options - Search options
+ * @returns {Object} { data, error }
+ */
+export const searchEntityStaff = async (searchTerm, options = {}) => {
   try {
-    const { data, error } = await supabase
+    let query = supabase
       .from('entity_staff')
-      .select('*')
-      .or(`name.ilike.%${searchTerm}%,role.ilike.%${searchTerm}%,site.ilike.%${searchTerm}%`)
-      .order('created_at', { ascending: false });
+      .select(`
+        *,
+        departments (id, name, description),
+        supervisor:entity_staff!supervisor_id (id, name, role, type)
+      `)
+      .or(`name.ilike.%${searchTerm}%,role.ilike.%${searchTerm}%,site.ilike.%${searchTerm}%,email.ilike.%${searchTerm}%`);
+
+    // Apply additional filters
+    if (options.status) {
+      query = query.eq('status', options.status);
+    }
+    if (options.type) {
+      query = query.eq('type', options.type);
+    }
+
+    const { data, error } = await query.order('name', { ascending: true });
 
     if (error) throw error;
     return { data, error: null };
@@ -331,14 +308,22 @@ export const searchEntityStaff = async (searchTerm) => {
   }
 };
 
-// Get entity staff by type
+/**
+ * Get entity staff by type
+ * @param {string} type - The entity staff type
+ * @returns {Object} { data, error }
+ */
 export const getEntityStaffByType = async (type) => {
   try {
     const { data, error } = await supabase
       .from('entity_staff')
-      .select('*')
+      .select(`
+        *,
+        departments (id, name, description),
+        supervisor:entity_staff!supervisor_id (id, name, role, type)
+      `)
       .eq('type', type)
-      .order('created_at', { ascending: false });
+      .order('name', { ascending: true });
 
     if (error) throw error;
     return { data, error: null };
@@ -348,12 +333,44 @@ export const getEntityStaffByType = async (type) => {
   }
 };
 
-// Get entity staff statistics
+/**
+ * Get entity staff by status
+ * @param {string} status - The entity staff status
+ * @returns {Object} { data, error }
+ */
+export const getEntityStaffByStatus = async (status) => {
+  try {
+    const { data, error } = await supabase
+      .from('entity_staff')
+      .select(`
+        *,
+        departments (id, name, description),
+        supervisor:entity_staff!supervisor_id (id, name, role, type)
+      `)
+      .eq('status', status)
+      .order('name', { ascending: true });
+
+    if (error) throw error;
+    return { data, error: null };
+  } catch (error) {
+    console.error('Error fetching entity staff by status:', error);
+    return { data: null, error };
+  }
+};
+
+// ============================================================================
+// STATISTICS AND ANALYTICS
+// ============================================================================
+
+/**
+ * Get entity staff statistics
+ * @returns {Object} { data, error }
+ */
 export const getEntityStaffStats = async () => {
   try {
     const { data: entityStaff, error } = await supabase
       .from('entity_staff')
-      .select('type, status, compliance');
+      .select('type, status, compliance, department_id');
 
     if (error) throw error;
 
@@ -361,7 +378,14 @@ export const getEntityStaffStats = async () => {
       total: entityStaff.length,
       byType: {},
       byStatus: {},
-      averageCompliance: 0
+      byDepartment: {},
+      averageCompliance: 0,
+      complianceDistribution: {
+        excellent: 0, // 90-100
+        good: 0,      // 80-89
+        fair: 0,      // 70-79
+        poor: 0       // 0-69
+      }
     };
 
     let totalCompliance = 0;
@@ -374,10 +398,21 @@ export const getEntityStaffStats = async () => {
       // Count by status
       stats.byStatus[staff.status] = (stats.byStatus[staff.status] || 0) + 1;
       
+      // Count by department
+      if (staff.department_id) {
+        stats.byDepartment[staff.department_id] = (stats.byDepartment[staff.department_id] || 0) + 1;
+      }
+      
       // Calculate compliance
       if (staff.compliance && staff.status === 'Active') {
         totalCompliance += staff.compliance;
         activeCount++;
+        
+        // Compliance distribution
+        if (staff.compliance >= 90) stats.complianceDistribution.excellent++;
+        else if (staff.compliance >= 80) stats.complianceDistribution.good++;
+        else if (staff.compliance >= 70) stats.complianceDistribution.fair++;
+        else stats.complianceDistribution.poor++;
       }
     });
 
@@ -390,7 +425,213 @@ export const getEntityStaffStats = async () => {
   }
 };
 
-// Initialize database with sample data
+// ============================================================================
+// HIERARCHY AND SUPERVISION OPERATIONS
+// ============================================================================
+
+/**
+ * Get potential supervisors (excluding the current entity staff member)
+ * @param {number} excludeEntityStaffId - ID to exclude from results
+ * @returns {Object} { data, error }
+ */
+export const getPotentialSupervisors = async (excludeEntityStaffId = null) => {
+  try {
+    let query = supabase
+      .from('entity_staff')
+      .select('id, name, role, type, status')
+      .eq('status', 'Active')
+      .order('name', { ascending: true });
+
+    if (excludeEntityStaffId) {
+      query = query.neq('id', excludeEntityStaffId);
+    }
+
+    const { data, error } = await query;
+    if (error) throw error;
+    return { data, error: null };
+  } catch (error) {
+    console.error('Error fetching potential supervisors:', error);
+    return { data: null, error };
+  }
+};
+
+/**
+ * Get direct reports of an entity staff member
+ * @param {number} entityStaffId - The entity staff ID
+ * @returns {Object} { data, error }
+ */
+export const getDirectReports = async (entityStaffId) => {
+  try {
+    const { data, error } = await supabase
+      .from('entity_staff')
+      .select(`
+        id, name, role, type, status, compliance, hire_date,
+        departments (id, name, description)
+      `)
+      .eq('supervisor_id', entityStaffId)
+      .eq('status', 'Active')
+      .order('name', { ascending: true });
+
+    if (error) throw error;
+    return { data, error: null };
+  } catch (error) {
+    console.error('Error fetching direct reports:', error);
+    return { data: null, error };
+  }
+};
+
+/**
+ * Get full reporting chain (all levels below an entity staff member)
+ * @param {number} entityStaffId - The entity staff ID
+ * @returns {Object} { data, error }
+ */
+export const getFullReportingChain = async (entityStaffId) => {
+  try {
+    const { data, error } = await supabase
+      .rpc('get_full_reporting_chain', { entity_staff_id: entityStaffId });
+
+    if (error) throw error;
+    return { data, error: null };
+  } catch (error) {
+    console.error('Error fetching full reporting chain:', error);
+    return { data: null, error };
+  }
+};
+
+/**
+ * Get supervisor chain (all levels above an entity staff member)
+ * @param {number} entityStaffId - The entity staff ID
+ * @returns {Object} { data, error }
+ */
+export const getSupervisorChain = async (entityStaffId) => {
+  try {
+    const { data, error } = await supabase
+      .rpc('get_supervisor_chain', { entity_staff_id: entityStaffId });
+
+    if (error) throw error;
+    return { data, error: null };
+  } catch (error) {
+    console.error('Error fetching supervisor chain:', error);
+    return { data: null, error };
+  }
+};
+
+/**
+ * Get organizational chart data
+ * @returns {Object} { data, error }
+ */
+export const getOrganizationalChart = async () => {
+  try {
+    const { data, error } = await supabase
+      .rpc('get_organizational_chart');
+
+    if (error) throw error;
+    return { data, error: null };
+  } catch (error) {
+    console.error('Error fetching organizational chart:', error);
+    return { data: null, error };
+  }
+};
+
+/**
+ * Update entity staff supervisor
+ * @param {number} entityStaffId - The entity staff ID
+ * @param {number} supervisorId - The supervisor ID
+ * @returns {Object} { data, error }
+ */
+export const updateEntityStaffSupervisor = async (entityStaffId, supervisorId) => {
+  try {
+    const { data, error } = await supabase
+      .from('entity_staff')
+      .update({ supervisor_id: supervisorId })
+      .eq('id', entityStaffId)
+      .select(`
+        *,
+        departments (id, name, description),
+        supervisor:entity_staff!supervisor_id (id, name, role, type)
+      `)
+      .single();
+
+    if (error) throw error;
+    return { data, error: null };
+  } catch (error) {
+    console.error('Error updating entity staff supervisor:', error);
+    return { data: null, error };
+  }
+};
+
+/**
+ * Get entity staff with supervisor information
+ * @returns {Object} { data, error }
+ */
+export const getEntityStaffWithSupervisors = async () => {
+  try {
+    const { data, error } = await supabase
+      .from('entity_staff_with_supervisors')
+      .select('*')
+      .order('name', { ascending: true });
+
+    if (error) throw error;
+    return { data, error: null };
+  } catch (error) {
+    console.error('Error fetching entity staff with supervisors:', error);
+    return { data: null, error };
+  }
+};
+
+// ============================================================================
+// DEPARTMENT OPERATIONS
+// ============================================================================
+
+/**
+ * Get all departments
+ * @returns {Object} { data, error }
+ */
+export const getDepartments = async () => {
+  try {
+    const { data, error } = await supabase
+      .from('departments')
+      .select('id, name, description, is_active')
+      .eq('is_active', true)
+      .order('name', { ascending: true });
+
+    if (error) throw error;
+    return { data, error: null };
+  } catch (error) {
+    console.error('Error fetching departments:', error);
+    return { data: null, error };
+  }
+};
+
+/**
+ * Create a new department
+ * @param {Object} departmentData - The department data
+ * @returns {Object} { data, error }
+ */
+export const createDepartment = async (departmentData) => {
+  try {
+    const { data, error } = await supabase
+      .from('departments')
+      .insert([departmentData])
+      .select()
+      .single();
+
+    if (error) throw error;
+    return { data, error: null };
+  } catch (error) {
+    console.error('Error creating department:', error);
+    return { data: null, error };
+  }
+};
+
+// ============================================================================
+// INITIALIZATION AND SAMPLE DATA
+// ============================================================================
+
+/**
+ * Initialize entity staff table with sample data
+ * @returns {Object} { data, error }
+ */
 export const initializeEntityStaffData = async () => {
   const sampleEntityStaff = [
     {
@@ -448,17 +689,15 @@ export const initializeEntityStaffData = async () => {
   ];
 
   try {
-    // Check if entity_staff table exists and has data
+    // Check if entity_staff table has data
     const { data: existingEntityStaff, error: checkError } = await supabase
       .from('entity_staff')
       .select('count')
       .limit(1);
 
-    if (checkError && checkError.code === '42P01') {
-      // Table doesn't exist, create it
-      console.log('Creating entity staff table...');
-      // Note: In a real app, you'd use migrations to create tables
-      // For now, we'll assume the table exists
+    if (checkError) {
+      console.error('Error checking entity staff table:', checkError);
+      return { data: null, error: checkError };
     }
 
     if (!existingEntityStaff || existingEntityStaff.length === 0) {
@@ -480,7 +719,14 @@ export const initializeEntityStaffData = async () => {
   }
 };
 
-// Get background check statistics
+// ============================================================================
+// BACKGROUND CHECK AND ONBOARDING STATS
+// ============================================================================
+
+/**
+ * Get background check statistics
+ * @returns {Object} { data, error }
+ */
 export const getBackgroundCheckStats = async () => {
   try {
     const { data: entityStaff, error } = await supabase
@@ -516,7 +762,10 @@ export const getBackgroundCheckStats = async () => {
   }
 };
 
-// Get onboarding statistics
+/**
+ * Get onboarding statistics
+ * @returns {Object} { data, error }
+ */
 export const getOnboardingStats = async () => {
   try {
     const { data: entityStaff, error } = await supabase
@@ -552,143 +801,58 @@ export const getOnboardingStats = async () => {
   }
 };
 
-// Get departments from the departments table
-export const getDepartments = async () => {
-  try {
-    const { data, error } = await supabase
-      .from('departments')
-      .select('id, name, description, is_active')
-      .eq('is_active', true)
-      .order('name');
+// ============================================================================
+// UTILITY FUNCTIONS
+// ============================================================================
 
-    if (error) throw error;
-    return { data, error: null };
-  } catch (error) {
-    console.error('Error fetching departments:', error);
-    return { data: null, error };
+/**
+ * Validate entity staff data
+ * @param {Object} data - The entity staff data to validate
+ * @returns {Object} { isValid, errors }
+ */
+export const validateEntityStaffData = (data) => {
+  const errors = [];
+
+  if (!data.name || data.name.trim().length === 0) {
+    errors.push('Name is required');
   }
+
+  if (!data.role || data.role.trim().length === 0) {
+    errors.push('Role is required');
+  }
+
+  if (data.compliance !== undefined && (data.compliance < 0 || data.compliance > 100)) {
+    errors.push('Compliance must be between 0 and 100');
+  }
+
+  if (data.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(data.email)) {
+    errors.push('Invalid email format');
+  }
+
+  return {
+    isValid: errors.length === 0,
+    errors
+  };
 };
 
-// Create a new department
-export const createDepartment = async (departmentData) => {
-  try {
-    const { data, error } = await supabase
-      .from('departments')
-      .insert([departmentData])
-      .select()
-      .single();
-
-    if (error) throw error;
-    return { data, error: null };
-  } catch (error) {
-    console.error('Error creating department:', error);
-    return { data: null, error };
-  }
-};
-
-// Chain of Command Functions
-
-// Get all entity staff that can be supervisors (excluding the current entity staff if editing)
-export const getPotentialSupervisors = async (excludeEntityStaffId = null) => {
-  try {
-    let query = supabase
-      .from('entity_staff')
-      .select('id, name, role, type, status')
-      .eq('status', 'Active')
-      .order('name');
-
-    if (excludeEntityStaffId) {
-      query = query.neq('id', excludeEntityStaffId);
-    }
-
-    const { data, error } = await query;
-    if (error) throw error;
-    return { data, error: null };
-  } catch (error) {
-    return { data: null, error };
-  }
-};
-
-// Get direct reports of an entity staff member
-export const getDirectReports = async (entityStaffId) => {
-  try {
-    const { data, error } = await supabase
-      .rpc('get_direct_reports', { entity_staff_id: entityStaffId });
-
-    if (error) throw error;
-    return { data, error: null };
-  } catch (error) {
-    return { data: null, error };
-  }
-};
-
-// Get full reporting chain (all levels below an entity staff member)
-export const getFullReportingChain = async (entityStaffId) => {
-  try {
-    const { data, error } = await supabase
-      .rpc('get_full_reporting_chain', { entity_staff_id: entityStaffId });
-
-    if (error) throw error;
-    return { data, error: null };
-  } catch (error) {
-    return { data: null, error };
-  }
-};
-
-// Get supervisor chain (all levels above an entity staff member)
-export const getSupervisorChain = async (entityStaffId) => {
-  try {
-    const { data, error } = await supabase
-      .rpc('get_supervisor_chain', { entity_staff_id: entityStaffId });
-
-    if (error) throw error;
-    return { data, error: null };
-  } catch (error) {
-    return { data: null, error };
-  }
-};
-
-// Get organizational chart data
-export const getOrganizationalChart = async () => {
-  try {
-    const { data, error } = await supabase
-      .rpc('get_organizational_chart');
-
-    if (error) throw error;
-    return { data, error: null };
-  } catch (error) {
-    return { data: null, error };
-  }
-};
-
-// Update entity staff supervisor
-export const updateEntityStaffSupervisor = async (entityStaffId, supervisorId) => {
-  try {
-    const { data, error } = await supabase
-      .from('entity_staff')
-      .update({ supervisor_id: supervisorId })
-      .eq('id', entityStaffId)
-      .select()
-      .single();
-
-    if (error) throw error;
-    return { data, error: null };
-  } catch (error) {
-    return { data: null, error };
-  }
-};
-
-// Get entity staff with supervisor information
-export const getEntityStaffWithSupervisors = async () => {
-  try {
-    const { data, error } = await supabase
-      .from('entity_staff_with_supervisors')
-      .select('*')
-      .order('name');
-
-    if (error) throw error;
-    return { data, error: null };
-  } catch (error) {
-    return { data: null, error };
-  }
+/**
+ * Format entity staff data for display
+ * @param {Object} entityStaff - The entity staff object
+ * @returns {Object} Formatted entity staff data
+ */
+export const formatEntityStaffForDisplay = (entityStaff) => {
+  return {
+    ...entityStaff,
+    displayName: entityStaff.name,
+    displayRole: entityStaff.role,
+    displayType: entityStaff.type,
+    displayStatus: entityStaff.status,
+    displayCompliance: `${entityStaff.compliance}%`,
+    displayCertifications: Array.isArray(entityStaff.certifications) 
+      ? entityStaff.certifications.join(', ')
+      : entityStaff.certifications || 'None',
+    displayHireDate: entityStaff.hire_date 
+      ? new Date(entityStaff.hire_date).toLocaleDateString()
+      : 'Not specified'
+  };
 }; 

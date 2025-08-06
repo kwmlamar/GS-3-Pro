@@ -39,6 +39,7 @@ const SecurityStaffForm = ({ securityStaff = null, onClose, onSuccess }) => {
   const [newDepartment, setNewDepartment] = useState('');
   const [showEntityDropdown, setShowEntityDropdown] = useState(false);
   const [showSupervisorDropdown, setShowSupervisorDropdown] = useState(false);
+  const [showSecurityCompanyDropdown, setShowSecurityCompanyDropdown] = useState(false);
   const [supervisors, setSupervisors] = useState([]);
   const [supervisorsLoading, setSupervisorsLoading] = useState(false);
   const [securityCompanies, setSecurityCompanies] = useState([]);
@@ -46,6 +47,13 @@ const SecurityStaffForm = ({ securityStaff = null, onClose, onSuccess }) => {
   const { toast } = useToast();
 
   const isEditing = !!securityStaff;
+
+  // Get the selected company display name
+  const getSelectedCompanyDisplay = () => {
+    if (!formData.security_company_id) return undefined;
+    const selectedCompany = securityCompanies.find(company => company.id === formData.security_company_id);
+    return selectedCompany ? `${selectedCompany.company_name} - ${selectedCompany.service_specialization}` : undefined;
+  };
 
   // Fetch sites for the dropdown
   const fetchSites = useCallback(async () => {
@@ -171,13 +179,16 @@ const SecurityStaffForm = ({ securityStaff = null, onClose, onSuccess }) => {
       if (showSupervisorDropdown && !event.target.closest('.supervisor-dropdown')) {
         setShowSupervisorDropdown(false);
       }
+      if (showSecurityCompanyDropdown && !event.target.closest('.security-company-dropdown')) {
+        setShowSecurityCompanyDropdown(false);
+      }
     };
 
     document.addEventListener('mousedown', handleClickOutside);
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
     };
-  }, [showEntityDropdown, showSupervisorDropdown]);
+  }, [showEntityDropdown, showSupervisorDropdown, showSecurityCompanyDropdown]);
 
   const handleInputChange = (field, value) => {
     setFormData(prev => ({
@@ -424,22 +435,58 @@ const SecurityStaffForm = ({ securityStaff = null, onClose, onSuccess }) => {
                   {/* Security Company */}
                   <div className="space-y-2">
                     <Label htmlFor="security_company" className="text-white">Security Company</Label>
-                    <Select
-                      value={formData.security_company_id || ''}
-                      onValueChange={(value) => handleInputChange('security_company_id', value === '' ? null : value)}
-                    >
-                      <SelectTrigger className="bg-slate-700/50 border-slate-600 text-white">
-                        <SelectValue placeholder={securityCompaniesLoading ? "Loading security companies..." : "Select security company (optional)"} />
-                      </SelectTrigger>
-                      <SelectContent className="bg-slate-800 border-slate-600">
-                        <SelectItem value="" className="text-white">No Security Company</SelectItem>
-                        {securityCompanies.map((company) => (
-                          <SelectItem key={company.id} value={company.id} className="text-white">
-                            {company.company_name} - {company.service_specialization}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    <div className="relative security-company-dropdown">
+                      <div
+                        onClick={() => setShowSecurityCompanyDropdown(!showSecurityCompanyDropdown)}
+                        className="flex items-center justify-between w-full p-3 bg-slate-700/50 border border-slate-600 rounded-lg cursor-pointer hover:bg-slate-700/70"
+                      >
+                        <div className="flex flex-wrap gap-1">
+                          {formData.security_company_id ? (
+                            <span className="text-white">
+                              {getSelectedCompanyDisplay()}
+                            </span>
+                          ) : (
+                            <span className="text-slate-400">Select security company (optional)</span>
+                          )}
+                        </div>
+                        <svg className="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                        </svg>
+                      </div>
+                      
+                      {showSecurityCompanyDropdown && (
+                        <div className="absolute z-50 w-full mt-1 bg-slate-800 border border-slate-600 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+                          <div
+                            onClick={() => {
+                              setFormData(prev => ({
+                                ...prev,
+                                security_company_id: null
+                              }));
+                              setShowSecurityCompanyDropdown(false);
+                            }}
+                            className="p-3 cursor-pointer hover:bg-slate-700 text-white border-b border-slate-600"
+                          >
+                            No Security Company
+                          </div>
+                          {securityCompanies.map((company) => (
+                            <div
+                              key={company.id}
+                              onClick={() => {
+                                setFormData(prev => ({
+                                  ...prev,
+                                  security_company_id: company.id
+                                }));
+                                setShowSecurityCompanyDropdown(false);
+                              }}
+                              className="p-3 cursor-pointer hover:bg-slate-700 text-white border-b border-slate-600 last:border-b-0"
+                            >
+                              <div className="text-sm">{company.company_name}</div>
+                              <div className="text-xs text-gray-400">{company.service_specialization}</div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
                     <p className="text-xs text-gray-400">Select the security company this person works for</p>
                   </div>
 

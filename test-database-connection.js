@@ -1,76 +1,53 @@
-// Test script to check database connection and data
-import { supabase } from './src/lib/supabaseClient.js';
+import { createClient } from '@supabase/supabase-js';
 
-const testDatabaseConnection = async () => {
-  console.log('🧪 Testing database connection and data...');
-  
+// Initialize Supabase client
+const supabaseUrl = 'https://mvwvshrmufwssjbatcxq.supabase.co';
+const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im12d3ZzaHJtdWZ3c3NqYmF0Y3hxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzQ5NzE5NzQsImV4cCI6MjA1MDU0Nzk3NH0.Ej8Ej8Ej8Ej8Ej8Ej8Ej8Ej8Ej8Ej8Ej8Ej8Ej8Ej8';
+
+const supabase = createClient(supabaseUrl, supabaseKey);
+
+async function testDatabaseConnection() {
   try {
-    // Test 1: Check if sites table has data
-    console.log('📊 Testing sites table...');
-    const { data: sitesData, error: sitesError } = await supabase
-      .from('sites')
-      .select('id, name, type')
-      .limit(5);
+    console.log('Testing database connection...');
     
-    console.log('Sites data:', sitesData);
-    console.log('Sites error:', sitesError);
-    
-    // Test 2: Check if entity_staff table has data
-    console.log('📊 Testing entity_staff table...');
-    const { data: entityStaffData, error: entityStaffError } = await supabase
+    // Test if entity_staff table exists
+    const { data: entityStaff, error: entityError } = await supabase
       .from('entity_staff')
-      .select('id, first_name, last_name, email')
-      .limit(5);
+      .select('count')
+      .limit(1);
     
-    console.log('Entity staff data:', entityStaffData);
-    console.log('Entity staff error:', entityStaffError);
+    if (entityError) {
+      console.error('Error accessing entity_staff table:', entityError);
+      return;
+    }
     
-    // Test 3: Check if entity_staff_entities table has data
-    console.log('📊 Testing entity_staff_entities table...');
-    const { data: entityStaffEntitiesData, error: entityStaffEntitiesError } = await supabase
-      .from('entity_staff_entities')
-      .select(`
-        entity_staff_id,
-        site_id,
-        is_primary,
-        entity_staff (id, first_name, last_name)
-      `)
-      .limit(5);
+    console.log('✅ entity_staff table exists and is accessible');
     
-    console.log('Entity staff entities data:', entityStaffEntitiesData);
-    console.log('Entity staff entities error:', entityStaffEntitiesError);
+    // Test if employees table exists (should fail)
+    const { data: employees, error: employeesError } = await supabase
+      .from('employees')
+      .select('count')
+      .limit(1);
     
-    // Test 4: Check if security_staff table has data
-    console.log('📊 Testing security_staff table...');
-    const { data: securityStaffData, error: securityStaffError } = await supabase
-      .from('security_staff')
-      .select('id, first_name, last_name, email')
-      .limit(5);
+    if (employeesError) {
+      console.log('✅ employees table does not exist (as expected):', employeesError.message);
+    } else {
+      console.log('⚠️ employees table still exists');
+    }
     
-    console.log('Security staff data:', securityStaffData);
-    console.log('Security staff error:', securityStaffError);
+    // Test the get_direct_reports function
+    const { data: directReports, error: functionError } = await supabase
+      .rpc('get_direct_reports', { entity_staff_id: 1 });
     
-    // Test 5: Check if security_staff_entities table has data
-    console.log('📊 Testing security_staff_entities table...');
-    const { data: securityStaffEntitiesData, error: securityStaffEntitiesError } = await supabase
-      .from('security_staff_entities')
-      .select(`
-        security_staff_id,
-        site_id,
-        is_primary,
-        security_staff (id, first_name, last_name)
-      `)
-      .limit(5);
-    
-    console.log('Security staff entities data:', securityStaffEntitiesData);
-    console.log('Security staff entities error:', securityStaffEntitiesError);
-    
-    console.log('✅ Database connection test completed!');
+    if (functionError) {
+      console.error('❌ Error with get_direct_reports function:', functionError);
+    } else {
+      console.log('✅ get_direct_reports function works');
+    }
     
   } catch (error) {
-    console.error('❌ Database connection test failed:', error);
+    console.error('Error:', error);
   }
-};
+}
 
-// Run the test
 testDatabaseConnection(); 

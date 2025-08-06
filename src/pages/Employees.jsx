@@ -21,14 +21,14 @@ import {
 import EmployeeForm from '@/components/employees/EmployeeForm';
 import EmployeeDetail from '@/components/employees/EmployeeDetail';
 import { 
-  getEmployees, 
-  searchEmployees, 
-  getEmployeeStats, 
-  initializeEmployeeData,
+  getEntityStaff, 
+  getEntityStaffStats, 
+  searchEntityStaff, 
+  initializeEntityStaffData,
   getBackgroundCheckStats,
   getOnboardingStats,
-  EMPLOYEE_TYPES 
-} from '@/lib/employeeService';
+  ENTITY_STAFF_TYPES 
+} from '@/lib/entityStaffService';
 import { testDatabaseConnection } from '@/lib/testConnection';
 
 const Employees = () => {

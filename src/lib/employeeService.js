@@ -88,7 +88,7 @@ export const createEmployee = async (employeeData) => {
     const { department, entities, ...dataToSave } = finalEmployeeData;
 
     const { data, error } = await supabase
-      .from('employees')
+      .from('entity_staff')
       .insert([dataToSave])
       .select(`
         *,
@@ -107,7 +107,7 @@ export const createEmployee = async (employeeData) => {
       }));
 
       const { error: entityError } = await supabase
-        .from('employee_entities')
+        .from('entity_staff_entities')
         .insert(employeeEntities);
 
       if (entityError) {
@@ -127,7 +127,7 @@ export const createEmployee = async (employeeData) => {
 export const getEmployees = async () => {
   try {
     const { data, error } = await supabase
-      .from('employees')
+      .from('entity_staff')
       .select(`
         *,
         departments (id, name, description)
@@ -152,13 +152,13 @@ export const getEmployees = async () => {
     const employeesWithEntities = await Promise.all(
       data.map(async (employee) => {
         const { data: entities } = await supabase
-          .from('employee_entities')
+          .from('entity_staff_entities')
           .select(`
             site_id,
             is_primary,
             sites (id, name, type, parent_id)
           `)
-          .eq('employee_id', employee.id);
+          .eq('entity_staff_id', employee.id);
 
         return {
           ...employee,
@@ -179,7 +179,7 @@ export const getEmployees = async () => {
 export const getEmployeeById = async (id) => {
   try {
     const { data, error } = await supabase
-      .from('employees')
+      .from('entity_staff')
       .select(`
         *,
         departments (id, name, description)
@@ -229,7 +229,7 @@ export const updateEmployee = async (id, updates) => {
     const { department, entities, ...dataToSave } = finalUpdates;
 
     const { data, error } = await supabase
-      .from('employees')
+      .from('entity_staff')
       .update(dataToSave)
       .eq('id', id)
       .select(`
@@ -244,20 +244,20 @@ export const updateEmployee = async (id, updates) => {
     if (entities !== undefined) {
       // Delete existing relationships
       await supabase
-        .from('employee_entities')
+        .from('entity_staff_entities')
         .delete()
-        .eq('employee_id', id);
+        .eq('entity_staff_id', id);
 
       // Create new relationships if entities are provided
       if (entities && entities.length > 0) {
         const employeeEntities = entities.map((entityId, index) => ({
-          employee_id: id,
+          entity_staff_id: id,
           site_id: entityId,
           is_primary: index === 0 // First entity is primary
         }));
 
         const { error: entityError } = await supabase
-          .from('employee_entities')
+          .from('entity_staff_entities')
           .insert(employeeEntities);
 
         if (entityError) {
@@ -278,7 +278,7 @@ export const updateEmployee = async (id, updates) => {
 export const deleteEmployee = async (id) => {
   try {
     const { error } = await supabase
-      .from('employees')
+      .from('entity_staff')
       .delete()
       .eq('id', id);
 
@@ -294,7 +294,7 @@ export const deleteEmployee = async (id) => {
 export const searchEmployees = async (searchTerm) => {
   try {
     const { data, error } = await supabase
-      .from('employees')
+      .from('entity_staff')
       .select('*')
       .or(`name.ilike.%${searchTerm}%,role.ilike.%${searchTerm}%,site.ilike.%${searchTerm}%`)
       .order('created_at', { ascending: false });
@@ -311,7 +311,7 @@ export const searchEmployees = async (searchTerm) => {
 export const getEmployeesByType = async (type) => {
   try {
     const { data, error } = await supabase
-      .from('employees')
+      .from('entity_staff')
       .select('*')
       .eq('type', type)
       .order('created_at', { ascending: false });
@@ -328,7 +328,7 @@ export const getEmployeesByType = async (type) => {
 export const getEmployeeStats = async () => {
   try {
     const { data: employees, error } = await supabase
-      .from('employees')
+      .from('entity_staff')
       .select('type, status, compliance');
 
     if (error) throw error;
@@ -424,9 +424,9 @@ export const initializeEmployeeData = async () => {
   ];
 
   try {
-    // Check if employees table exists and has data
+    // Check if entity_staff table exists and has data
     const { data: existingEmployees, error: checkError } = await supabase
-      .from('employees')
+      .from('entity_staff')
       .select('count')
       .limit(1);
 
@@ -440,7 +440,7 @@ export const initializeEmployeeData = async () => {
     if (!existingEmployees || existingEmployees.length === 0) {
       // Insert sample data
       const { data, error } = await supabase
-        .from('employees')
+        .from('entity_staff')
         .insert(sampleEmployees)
         .select();
 
@@ -460,7 +460,7 @@ export const initializeEmployeeData = async () => {
 export const getBackgroundCheckStats = async () => {
   try {
     const { data: employees, error } = await supabase
-      .from('employees')
+      .from('entity_staff')
       .select('status, compliance, created_at');
 
     if (error) throw error;
@@ -496,7 +496,7 @@ export const getBackgroundCheckStats = async () => {
 export const getOnboardingStats = async () => {
   try {
     const { data: employees, error } = await supabase
-      .from('employees')
+      .from('entity_staff')
       .select('hire_date, status, created_at');
 
     if (error) throw error;
@@ -568,7 +568,7 @@ export const createDepartment = async (departmentData) => {
 export const getPotentialSupervisors = async (excludeEmployeeId = null) => {
   try {
     let query = supabase
-      .from('employees')
+      .from('entity_staff')
       .select('id, name, role, type, status')
       .eq('status', 'Active')
       .order('name');
@@ -589,7 +589,7 @@ export const getPotentialSupervisors = async (excludeEmployeeId = null) => {
 export const getDirectReports = async (employeeId) => {
   try {
     const { data, error } = await supabase
-      .rpc('get_direct_reports', { employee_id: employeeId });
+      .rpc('get_direct_reports', { entity_staff_id: employeeId });
 
     if (error) throw error;
     return { data, error: null };
@@ -602,7 +602,7 @@ export const getDirectReports = async (employeeId) => {
 export const getFullReportingChain = async (employeeId) => {
   try {
     const { data, error } = await supabase
-      .rpc('get_full_reporting_chain', { employee_id: employeeId });
+      .rpc('get_full_reporting_chain', { entity_staff_id: employeeId });
 
     if (error) throw error;
     return { data, error: null };
@@ -615,7 +615,7 @@ export const getFullReportingChain = async (employeeId) => {
 export const getSupervisorChain = async (employeeId) => {
   try {
     const { data, error } = await supabase
-      .rpc('get_supervisor_chain', { employee_id: employeeId });
+      .rpc('get_supervisor_chain', { entity_staff_id: employeeId });
 
     if (error) throw error;
     return { data, error: null };
@@ -641,7 +641,7 @@ export const getOrganizationalChart = async () => {
 export const updateEmployeeSupervisor = async (employeeId, supervisorId) => {
   try {
     const { data, error } = await supabase
-      .from('employees')
+      .from('entity_staff')
       .update({ supervisor_id: supervisorId })
       .eq('id', employeeId)
       .select()
@@ -658,7 +658,7 @@ export const updateEmployeeSupervisor = async (employeeId, supervisorId) => {
 export const getEmployeesWithSupervisors = async () => {
   try {
     const { data, error } = await supabase
-      .from('employees_with_supervisors')
+      .from('entity_staff_with_supervisors')
       .select('*')
       .order('name');
 

@@ -16,16 +16,21 @@ import {
   Loader2,
   X,
   ExternalLink,
-  Network
+  Network,
+  Tag,
+  Navigation
 } from 'lucide-react';
 import { supabase } from '@/lib/supabaseClient';
 import { getEntityStaff } from '@/lib/entityStaffService';
 import { getSecurityStaff } from '@/lib/securityStaffService';
+import { nfcGpsService } from '@/lib/nfcGpsService';
 
 const EntityDetailsDialog = ({ isOpen, onClose, entity }) => {
   const [loading, setLoading] = useState(false);
   const [entityStaff, setEntityStaff] = useState([]);
   const [securityStaff, setSecurityStaff] = useState([]);
+  const [nfcTags, setNfcTags] = useState([]);
+  const [gpsLocations, setGpsLocations] = useState([]);
   const [activeTab, setActiveTab] = useState('overview');
   const { toast } = useToast();
 
@@ -199,6 +204,22 @@ const EntityDetailsDialog = ({ isOpen, onClose, entity }) => {
       console.log('✅ Combined security staff:', combinedSecurityStaff);
       setSecurityStaff(combinedSecurityStaff);
 
+      // Fetch NFC/GPS data for this site
+      try {
+        const [tags, locations] = await Promise.all([
+          nfcGpsService.getNfcTagsBySite(entity.id),
+          nfcGpsService.getGpsLocationsBySite(entity.id)
+        ]);
+        
+        setNfcTags(tags);
+        setGpsLocations(locations);
+        
+        console.log('📱 NFC tags for site:', tags);
+        console.log('📍 GPS locations for site:', locations);
+      } catch (error) {
+        console.error('Error fetching NFC/GPS data:', error);
+      }
+
       console.log('🎯 Final state - Entity staff count:', combinedEntityStaff.length);
       console.log('🎯 Final state - Security staff count:', combinedSecurityStaff.length);
       console.log('🎯 Final state - Entity staff data:', combinedEntityStaff);
@@ -300,6 +321,9 @@ const EntityDetailsDialog = ({ isOpen, onClose, entity }) => {
                       </TabsTrigger>
                       <TabsTrigger value="hierarchy" className="data-[state=active]:bg-slate-700 data-[state=active]:text-white text-slate-300">
                         Hierarchy
+                      </TabsTrigger>
+                      <TabsTrigger value="nfc_gps" className="data-[state=active]:bg-slate-700 data-[state=active]:text-white text-slate-300">
+                        NFC/GPS
                       </TabsTrigger>
                     </TabsList>
 
@@ -606,6 +630,89 @@ const EntityDetailsDialog = ({ isOpen, onClose, entity }) => {
                           </div>
                         </CardContent>
                       </Card>
+                    </TabsContent>
+
+                    <TabsContent value="nfc_gps" className="mt-4">
+                      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        <Card className="bg-slate-800/50 border-slate-700">
+                          <CardHeader>
+                            <CardTitle className="text-lg text-white flex items-center">
+                              <Tag className="w-5 h-5 mr-2 text-blue-400" />
+                              NFC Tags ({nfcTags.length})
+                            </CardTitle>
+                          </CardHeader>
+                          <CardContent>
+                            {nfcTags.length === 0 ? (
+                              <div className="text-center py-8 text-gray-400">
+                                <Tag className="w-12 h-12 mx-auto mb-3 opacity-50" />
+                                <p>No NFC tags deployed at this location</p>
+                                <p className="text-sm text-gray-500 mt-2">NFC tags can be added through the NFC Management page.</p>
+                              </div>
+                            ) : (
+                              <div className="space-y-3">
+                                {nfcTags.map((tag) => (
+                                  <div key={tag.id} className="p-3 rounded-lg bg-slate-700/50 border border-slate-600">
+                                    <div className="flex items-center justify-between mb-2">
+                                      <h4 className="text-white font-medium">{tag.tag_id}</h4>
+                                      <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${
+                                        tag.status === 'Active' ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400'
+                                      }`}>
+                                        {tag.status}
+                                      </span>
+                                    </div>
+                                    <p className="text-sm text-gray-300 mb-1">{tag.location_description || tag.name}</p>
+                                    <div className="flex items-center justify-between text-xs text-gray-400">
+                                      <span>Battery: {tag.battery_level}%</span>
+                                      <span>Last scan: {tag.last_scan_at || 'Never'}</span>
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+                          </CardContent>
+                        </Card>
+
+                        <Card className="bg-slate-800/50 border-slate-700">
+                          <CardHeader>
+                            <CardTitle className="text-lg text-white flex items-center">
+                              <Navigation className="w-5 h-5 mr-2 text-green-400" />
+                              GPS Locations ({gpsLocations.length})
+                            </CardTitle>
+                          </CardHeader>
+                          <CardContent>
+                            {gpsLocations.length === 0 ? (
+                              <div className="text-center py-8 text-gray-400">
+                                <Navigation className="w-12 h-12 mx-auto mb-3 opacity-50" />
+                                <p>No GPS locations configured for this site</p>
+                                <p className="text-sm text-gray-500 mt-2">GPS locations can be added through the NFC Management page.</p>
+                              </div>
+                            ) : (
+                              <div className="space-y-3">
+                                {gpsLocations.map((location) => (
+                                  <div key={location.id} className="p-3 rounded-lg bg-slate-700/50 border border-slate-600">
+                                    <div className="flex items-center justify-between mb-2">
+                                      <h4 className="text-white font-medium">{location.name}</h4>
+                                      <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${
+                                        location.status === 'Active' ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400'
+                                      }`}>
+                                        {location.status}
+                                      </span>
+                                    </div>
+                                    <p className="text-sm text-gray-300 mb-1">{location.description}</p>
+                                    <div className="flex items-center justify-between text-xs text-gray-400">
+                                      <span>Radius: {location.radius_meters}m</span>
+                                      <span>Type: {location.location_type}</span>
+                                    </div>
+                                    <div className="text-xs text-gray-500 mt-1">
+                                      Last check-in: {location.last_check_in_at || 'Never'}
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+                          </CardContent>
+                        </Card>
+                      </div>
                     </TabsContent>
                   </Tabs>
                 )}
